@@ -1,13 +1,7 @@
 'use server';
 
-import { readMemory, deleteMemory, MemoryEntry } from '@/agents/memory';
-import { revalidatePath } from 'next/cache';
+import { readMemory } from '@/agents/memory';
 
-export async function getMemory(): Promise<MemoryEntry[]> {
+export async function getMemory(): Promise<string> {
   return await readMemory();
-}
-
-export async function removeMemoryEntry(key: string) {
-  await deleteMemory(key);
-  revalidatePath('/');
 }
