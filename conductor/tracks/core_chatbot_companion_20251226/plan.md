@@ -15,7 +15,7 @@ This plan outlines the steps to build the multi-agent chatbot companion.
 
 ## Phase 3: Agent Implementation
 - [x] Task: Implement Memory Agent with CRUD operations on a local file 7490f5c
-- [~] Task: Implement Scheduler Agent using Google Calendar tool
+- [x] Task: Implement Scheduler Agent using Google Calendar tool ccb1139
 - [ ] Task: Implement Researcher Agent using Tavily tool
 - [ ] Task: Implement Main Companion Agent for orchestration and agent transparency
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Agent Implementation' (Protocol in workflow.md)
