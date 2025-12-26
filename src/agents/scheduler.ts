@@ -1,5 +1,5 @@
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { listEvents, createEvent, checkConflicts } from '@/tools/calendar';
+import { listEvents as _listEvents, createEvent as _createEvent, checkConflicts as _checkConflicts } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
 
 export async function handleSchedulerRequest(userQuery: string) {

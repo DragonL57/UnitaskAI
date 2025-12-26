@@ -1,5 +1,5 @@
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { search, readWebpage } from '@/tools/tavily';
+import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
 export async function handleResearcherRequest(userQuery: string) {
