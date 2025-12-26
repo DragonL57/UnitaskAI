@@ -4,7 +4,7 @@ This plan outlines the steps to build the multi-agent chatbot companion.
 
 ## Phase 1: Project Initialization & LLM Setup
 - [x] Task: Scaffold Next.js project with TypeScript and Tailwind CSS (User Action Required: Run `npx create-next-app@latest . --typescript --tailwind --eslint`. Note: Use lowercase name if prompted or in package.json) d055e4c
-- [ ] Task: Create modular directory structure (Frontend/Backend separation, `agents/`, `prompts/`, `tools/`)
+- [~] Task: Create modular directory structure (Frontend/Backend separation, `agents/`, `prompts/`, `tools/`)
 - [ ] Task: Configure Poe API client with `grok-4.1-fast-non-reasoning` model
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Initialization & LLM Setup' (Protocol in workflow.md)
 
