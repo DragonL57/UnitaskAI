@@ -74,9 +74,9 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
 
         let output = "";
         if (fn.name === 'delegateToScheduler') {
-          output = await handleSchedulerRequest(args.instruction);
+          output = (await handleSchedulerRequest(args.instruction)) || "";
         } else if (fn.name === 'delegateToResearcher') {
-          output = await handleResearcherRequest(args.instruction);
+          output = (await handleResearcherRequest(args.instruction)) || "";
         }
 
         const secondResponse = await poe.chat.completions.create({

@@ -103,7 +103,7 @@ export async function handleSchedulerRequest(instruction: string) {
       }
     }
 
-    return assistantMessage.content;
+    return assistantMessage.content || "I couldn't process your calendar request.";
 
   } catch (error) {
     console.error('Scheduler Agent Error:', error);
