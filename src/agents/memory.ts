@@ -1,5 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { poe, MODEL_NAME } from '@/lib/poe';
+import { MEMORY_EVALUATOR_PROMPT } from '@/prompts/memory';
+import { MessageContext } from '@/agents/main';
 
 const MEMORY_FILE = path.join(process.cwd(), 'src/db/memory.json');
 
@@ -66,4 +69,57 @@ export async function searchMemory(query: string): Promise<MemoryEntry[]> {
     m.key.toLowerCase().includes(lowercaseQuery) || 
     JSON.stringify(m.value).toLowerCase().includes(lowercaseQuery)
   );
+}
+
+// Silent Observer Logic
+const tools = [
+  {
+    type: 'function',
+    function: {
+      name: 'save_memory',
+      description: 'Save a specific fact or preference about the user.',
+      parameters: {
+        type: 'object',
+        properties: {
+          key: { type: 'string', description: 'A short label for the memory (e.g., "User Name", "Coffee Preference").' },
+          value: { type: 'string', description: 'The detail to remember.' },
+          category: { type: 'string', enum: ['preference', 'fact', 'other'], description: 'The type of information.' }
+        },
+        required: ['key', 'value', 'category'],
+      },
+    },
+  },
+];
+
+export async function evaluateAndStore(userQuery: string, history: MessageContext[] = []) {
+  try {
+    // We only need the last few messages for context
+    const recentHistory = history.slice(-5);
+    
+    const response = await poe.chat.completions.create({
+      model: MODEL_NAME,
+      messages: [
+        { role: 'system', content: MEMORY_EVALUATOR_PROMPT },
+        ...recentHistory,
+        { role: 'user', content: userQuery }
+      ],
+      // @ts-ignore
+      tools: tools,
+      tool_choice: 'auto', 
+    });
+
+    const message = response.choices[0].message;
+
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      for (const toolCall of message.tool_calls) {
+        if (toolCall.function.name === 'save_memory') {
+          const args = JSON.parse(toolCall.function.arguments);
+          await addOrUpdateMemory(args.key, args.value, args.category);
+          console.log(`[Memory Agent] Saved: ${args.key} = ${args.value}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Memory Agent] Evaluation failed:', error);
+  }
 }

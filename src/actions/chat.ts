@@ -1,9 +1,16 @@
 'use server';
 
 import { chat as mainChat, MessageContext } from '@/agents/main';
+import { evaluateAndStore } from '@/agents/memory';
 
 export async function sendChatMessage(message: string, history: MessageContext[] = []) {
   try {
+    // Fire-and-forget memory evaluation
+    // We don't await this because we don't want to block the user response
+    evaluateAndStore(message, history).catch(err => 
+      console.error('Background memory evaluation error:', err)
+    );
+
     const response = await mainChat(message, history);
     
     let agent: 'scheduler' | 'researcher' | 'main' = 'main';

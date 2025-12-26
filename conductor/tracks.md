@@ -14,5 +14,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Enhance Memory Agent with Tool Calling
+## [~] Track: Enhance Memory Agent with Tool Calling
 *Link: [./conductor/tracks/enhance_memory_tool_20251226/](./conductor/tracks/enhance_memory_tool_20251226/)*
