@@ -1,39 +1,33 @@
 import { google } from 'googleapis';
 
-console.log('Initializing Google Calendar Tool (Explicit Auth)...');
-console.log('GOOGLE_CLIENT_EMAIL:', process.env.GOOGLE_CLIENT_EMAIL);
+console.log('Initializing Google Calendar Tool (GoogleAuth)...');
 
-let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-if (privateKey) {
-  // Handle both literal \n and actual newlines
-  privateKey = privateKey.replace(/\\n/g, '\n');
-  console.log('Private Key Header:', privateKey.substring(0, 30) + '...');
-} else {
-  console.error('GOOGLE_PRIVATE_KEY is missing!');
+const client_email = process.env.GOOGLE_CLIENT_EMAIL;
+let private_key = process.env.GOOGLE_PRIVATE_KEY;
+
+if (private_key) {
+  // Handle both literal \n and actual newlines, and remove surrounding quotes if present
+  private_key = private_key.replace(/\\n/g, '\n').replace(/^"|"$/g, '');
 }
 
-const SCOPES = ['https://www.googleapis.com/auth/calendar'];
+if (!client_email || !private_key) {
+  console.error('Missing Google Credentials!');
+}
 
-const auth = new google.auth.JWT(
-  process.env.GOOGLE_CLIENT_EMAIL,
-  undefined,
-  privateKey,
-  SCOPES
-);
+const auth = new google.auth.GoogleAuth({
+  credentials: {
+    client_email,
+    private_key,
+  },
+  scopes: ['https://www.googleapis.com/auth/calendar'],
+});
 
-const calendar = google.calendar({ version: 'v3' });
+const calendar = google.calendar({ version: 'v3', auth });
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
-
-async function getAuthClient() {
-  await auth.authorize();
-  return auth;
-}
 
 export async function listEvents(timeMin: string = new Date().toISOString()) {
   try {
-    const authClient = await getAuthClient();
     const res = await calendar.events.list({
-      auth: authClient,
       calendarId: CALENDAR_ID,
       timeMin,
       maxResults: 10,
@@ -49,9 +43,7 @@ export async function listEvents(timeMin: string = new Date().toISOString()) {
 
 export async function createEvent(summary: string, start: string, end: string, description?: string) {
   try {
-    const authClient = await getAuthClient();
     const res = await calendar.events.insert({
-      auth: authClient,
       calendarId: CALENDAR_ID,
       requestBody: {
         summary,
@@ -69,9 +61,7 @@ export async function createEvent(summary: string, start: string, end: string, d
 
 export async function checkConflicts(start: string, end: string) {
   try {
-    const authClient = await getAuthClient();
     const res = await calendar.events.list({
-      auth: authClient,
       calendarId: CALENDAR_ID,
       timeMin: start,
       timeMax: end,
