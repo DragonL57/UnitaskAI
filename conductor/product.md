@@ -23,3 +23,5 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 
 ## Project Status
 - **Core Implementation Complete:** The foundational multi-agent orchestration, Google Calendar integration, Tavily search, and persistent memory system are fully implemented and verified.
+- **Context Awareness:** The chatbot now maintains conversation context within a session, allowing for follow-up questions and more natural dialogue.
+- **Silent Memory:** The Memory Agent now acts as a background observer, autonomously identifying and saving user facts without explicit commands.
