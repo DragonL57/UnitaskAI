@@ -26,3 +26,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Migrate Memory to Vercel Blob Storage
 *Link: [./conductor/tracks/migrate_memory_vercel_blob_20251226/](./conductor/tracks/migrate_memory_vercel_blob_20251226/)*
+
+---
+
+## [ ] Track: Refine Agent Delegation Architecture
+*Link: [./conductor/tracks/refine_delegation_arch_20251226/](./conductor/tracks/refine_delegation_arch_20251226/)*
