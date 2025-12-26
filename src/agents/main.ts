@@ -9,13 +9,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToScheduler',
-      description: 'Delegate the request to the Scheduler Agent for calendar or scheduling tasks.',
+      description: 'Command the Scheduler Agent to perform a specific calendar task. You MUST provide a clear, refined instruction (e.g., "List events for 2023-10-27").',
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'The user query related to scheduling.' },
+          instruction: { type: 'string', description: 'The refined instruction for the Scheduler Agent.' },
         },
-        required: ['query'],
+        required: ['instruction'],
       },
     },
   },
@@ -23,13 +23,13 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToResearcher',
-      description: 'Delegate the request to the Researcher Agent for web search or webpage reading tasks.',
+      description: 'Command the Researcher Agent to find information. You MUST provide a clear, refined instruction (e.g., "Search for the latest Next.js features").',
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'The user query related to research.' },
+          instruction: { type: 'string', description: 'The refined instruction for the Researcher Agent.' },
         },
-        required: ['query'],
+        required: ['instruction'],
       },
     },
   },
@@ -71,10 +71,11 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
       const args = JSON.parse(fn.arguments);
 
       if (fn.name === 'delegateToScheduler') {
-        const output = await handleSchedulerRequest(args.query);
+        // Pass the refined instruction, not the raw query
+        const output = await handleSchedulerRequest(args.instruction);
         return `[Scheduler Active] ${output}`;
       } else if (fn.name === 'delegateToResearcher') {
-        const output = await handleResearcherRequest(args.query);
+        const output = await handleResearcherRequest(args.instruction);
         return `[Researcher Active] ${output}`;
       }
     }

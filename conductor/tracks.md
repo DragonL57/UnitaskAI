@@ -29,5 +29,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Refine Agent Delegation Architecture
+## [~] Track: Refine Agent Delegation Architecture
 *Link: [./conductor/tracks/refine_delegation_arch_20251226/](./conductor/tracks/refine_delegation_arch_20251226/)*

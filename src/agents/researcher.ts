@@ -40,23 +40,21 @@ const tools = [
   },
 ];
 
-export async function handleResearcherRequest(userQuery: string) {
+export async function handleResearcherRequest(instruction: string) {
   try {
-    // 1. First call to LLM to decide on tool usage
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: [
         { role: 'system', content: RESEARCHER_PROMPT },
-        { role: 'user', content: userQuery },
+        { role: 'user', content: instruction },
       ],
-      // @ts-ignore: Poe API via OpenAI SDK supports tools
+      // @ts-ignore
       tools: tools,
       tool_choice: 'auto', 
     });
 
     const message = response.choices[0].message;
 
-    // 2. Check if the LLM wants to call a tool
     if (message.tool_calls && message.tool_calls.length > 0) {
       const toolCall = message.tool_calls[0];
       const functionName = toolCall.function.name;
@@ -70,13 +68,12 @@ export async function handleResearcherRequest(userQuery: string) {
         toolResult = await readWebpage(functionArgs.url);
       }
 
-      // 3. Second call to LLM to summarize the tool result
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: RESEARCHER_PROMPT },
-          { role: 'user', content: userQuery },
-          message, // Assistant's intent to call tool
+          { role: 'user', content: instruction },
+          message,
           {
             role: 'tool',
             tool_call_id: toolCall.id,
@@ -88,7 +85,6 @@ export async function handleResearcherRequest(userQuery: string) {
       return secondResponse.choices[0].message.content;
     }
 
-    // No tool called, just return the text
     return message.content;
 
   } catch (error) {

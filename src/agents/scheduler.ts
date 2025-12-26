@@ -48,7 +48,7 @@ const tools = [
   },
 ];
 
-export async function handleSchedulerRequest(userQuery: string) {
+export async function handleSchedulerRequest(instruction: string) {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
   try {
@@ -56,7 +56,7 @@ export async function handleSchedulerRequest(userQuery: string) {
       model: MODEL_NAME,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userQuery },
+        { role: 'user', content: instruction },
       ],
       // @ts-ignore
       tools: tools,
@@ -83,7 +83,7 @@ export async function handleSchedulerRequest(userQuery: string) {
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userQuery },
+          { role: 'user', content: instruction },
           message,
           {
             role: 'tool',
