@@ -1,34 +1,25 @@
 'use server';
 
 import { chat as mainChat, MessageContext } from '@/agents/main';
-import { evaluateAndStore } from '@/agents/memory';
 
+/**
+ * sendChatMessage Server Action
+ * Note: The main chat flow has migrated to the /api/chat route for streaming support.
+ * This action is maintained for non-streaming compatibility if needed.
+ */
 export async function sendChatMessage(message: string, history: MessageContext[] = []) {
   try {
-    // Fire-and-forget memory evaluation
-    // We don't await this because we don't want to block the user response
-    evaluateAndStore(message).catch(err => 
-      console.error('Background memory evaluation error:', err)
-    );
-
-    const response = await mainChat(message, history);
+    const result = await mainChat(message, history, false);
     
-    let agent: 'scheduler' | 'researcher' | 'main' = 'main';
-    let content = response || '';
-
-    if (content.includes('[Scheduler Active]')) {
-      agent = 'scheduler';
-      content = content.replace('[Scheduler Active] ', '');
-    }
-    if (content.includes('[Researcher Active]')) {
-      agent = 'researcher';
-      content = content.replace('[Researcher Active] ', '');
+    // We only care about non-stream results here
+    if ('content' in result) {
+      return {
+        content: result.content || '',
+        agent: result.agent as 'scheduler' | 'researcher' | 'main'
+      };
     }
 
-    return {
-      content: content,
-      agent
-    };
+    return { content: '', agent: 'main' as const };
   } catch (error) {
     console.error('Server Action Error in sendChatMessage:', error);
     if (error instanceof Error) {
