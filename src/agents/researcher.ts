@@ -64,7 +64,9 @@ export async function handleResearcherRequest(instruction: string) {
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       const toolCall = assistantMessage.tool_calls[0];
+      // @ts-expect-error - Tool call type inference issue
       const functionName = toolCall.function.name;
+      // @ts-expect-error - Tool call type inference issue
       const functionArgs = JSON.parse(toolCall.function.arguments);
 
       console.log(`[Researcher Agent] Executing ${functionName}...`);

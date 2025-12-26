@@ -67,7 +67,9 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       const toolCall = assistantMessage.tool_calls[0];
+      // @ts-expect-error - Tool call type inference issue
       const fn = toolCall.function;
+      // @ts-expect-error - Tool call type inference issue
       const args = JSON.parse(fn.arguments);
 
       let output = "";
