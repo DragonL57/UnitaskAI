@@ -2,7 +2,6 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
-// Define tools for function calling
 const tools = [
   {
     type: 'function',
@@ -12,10 +11,7 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          query: {
-            type: 'string',
-            description: 'The search query string.',
-          },
+          query: { type: 'string', description: 'The search query string.' },
         },
         required: ['query'],
       },
@@ -29,10 +25,7 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          url: {
-            type: 'string',
-            description: 'The full URL of the webpage to read.',
-          },
+          url: { type: 'string', description: 'The full URL of the webpage to read.' },
         },
         required: ['url'],
       },
@@ -42,7 +35,7 @@ const tools = [
 
 export async function handleResearcherRequest(instruction: string) {
   if (!instruction || !instruction.trim()) {
-    return "I received an empty instruction. Please provide a topic to research.";
+    return "I received an empty instruction.";
   }
 
   console.log('[Researcher Agent] Received instruction:', instruction);
@@ -60,14 +53,14 @@ export async function handleResearcherRequest(instruction: string) {
       tool_choice: 'auto', 
     });
 
-    const message = response.choices[0].message;
+    const assistantMessage = response.choices[0].message;
 
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      const toolCall = message.tool_calls[0];
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      const toolCall = assistantMessage.tool_calls[0];
       const functionName = toolCall.function.name;
       const functionArgs = JSON.parse(toolCall.function.arguments);
 
-      console.log(`[Researcher Agent] Calling tool: ${functionName}`);
+      console.log(`[Researcher Agent] Executing tool: ${functionName}`);
 
       let toolResult;
       if (functionName === 'search') {
@@ -76,16 +69,23 @@ export async function handleResearcherRequest(instruction: string) {
         toolResult = await _readWebpage(functionArgs.url);
       }
 
-      console.log(`[Researcher Agent] Tool result length: ${JSON.stringify(toolResult).length}`);
-
-      // 2. Manual Injection Summary Call (Robust Pattern)
+      // 2. Proper Tool Response Call
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: RESEARCHER_PROMPT },
+          { role: 'user', content: instruction },
+          // Assistant message must be exactly as received (or reconstructed cleanly)
           {
-            role: 'user', 
-            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
+            role: 'assistant',
+            content: assistantMessage.content || '',
+            tool_calls: assistantMessage.tool_calls,
+          },
+          // Tool message with result
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(toolResult),
           },
         ],
       });
@@ -93,13 +93,13 @@ export async function handleResearcherRequest(instruction: string) {
       const finalContent = secondResponse.choices[0].message.content;
       console.log(`[Researcher Agent] Final response length: ${finalContent?.length || 0}`);
       
-      return finalContent || "I found some information but couldn't summarize it.";
+      return finalContent || "I found the information but couldn't summarize it.";
     }
 
-    return message.content || "I couldn't find a tool to help with that.";
+    return assistantMessage.content || "I'm not sure how to research that.";
 
   } catch (error) {
     console.error('Researcher Agent Error:', error);
-    return "I encountered an error while trying to research that.";
+    return "I encountered an error while researching.";
   }
 }

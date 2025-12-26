@@ -8,10 +8,7 @@ const tools = [
     function: {
       name: 'listEvents',
       description: 'List the upcoming events on the user\'s calendar.',
-      parameters: {
-        type: 'object',
-        properties: {},
-      },
+      parameters: { type: 'object', properties: {} },
     },
   },
   {
@@ -63,16 +60,16 @@ export async function handleSchedulerRequest(instruction: string) {
       tool_choice: 'auto',
     });
 
-    const message = response.choices[0].message;
+    const assistantMessage = response.choices[0].message;
 
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      const toolCall = message.tool_calls[0];
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      const toolCall = assistantMessage.tool_calls[0];
       const fn = toolCall.function;
       const args = JSON.parse(fn.arguments);
+      
+      console.log(`[Scheduler Agent] Executing tool: ${fn.name}`);
+
       let result;
-
-      console.log(`[Scheduler Agent] Calling tool: ${fn.name}`);
-
       if (fn.name === 'listEvents') {
         result = await listEvents();
       } else if (fn.name === 'createEvent') {
@@ -81,14 +78,20 @@ export async function handleSchedulerRequest(instruction: string) {
         result = await checkConflicts(args.start, args.end);
       }
 
-      // Manual Injection Summary Call
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: systemPrompt },
+          { role: 'user', content: instruction },
           {
-            role: 'user',
-            content: `Instruction: ${instruction}\n\nI have accessed the user's calendar and retrieved the following raw data:\n\n${JSON.stringify(result)}\n\nNow, please provide a clear and helpful response to the user based on this data.`,
+            role: assistantMessage.role,
+            content: assistantMessage.content || '',
+            tool_calls: assistantMessage.tool_calls,
+          },
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(result),
           },
         ],
       });
@@ -96,10 +99,10 @@ export async function handleSchedulerRequest(instruction: string) {
       return secondResponse.choices[0].message.content;
     }
 
-    return message.content;
+    return assistantMessage.content;
 
   } catch (error) {
     console.error('Scheduler Agent Error:', error);
-    return "I encountered an error while accessing your calendar.";
+    return "I encountered an error with your calendar.";
   }
 }

@@ -9,7 +9,7 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToScheduler',
-      description: 'Command the Scheduler Agent to perform a specific calendar task. You MUST provide a clear, refined instruction (e.g., "List events for 2023-10-27").',
+      description: 'Command the Scheduler Agent to perform a specific calendar task.',
       parameters: {
         type: 'object',
         properties: {
@@ -23,7 +23,7 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToResearcher',
-      description: 'Command the Researcher Agent to find information. You MUST provide a clear, refined instruction (e.g., "Search for the latest Next.js features").',
+      description: 'Command the Researcher Agent to find information.',
       parameters: {
         type: 'object',
         properties: {
@@ -41,7 +41,6 @@ export interface MessageContext {
 }
 
 export async function chat(userQuery: string, history: MessageContext[] = []) {
-  // Read raw markdown memory
   const memoryContent = await readMemory(true);
 
   const systemPrompt = MAIN_COMPANION_PROMPT
@@ -63,26 +62,44 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
       tool_choice: 'auto',
     });
 
-    const message = response.choices[0].message;
+    const assistantMessage = response.choices[0].message;
 
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      const toolCall = message.tool_calls[0];
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      const toolCall = assistantMessage.tool_calls[0];
       const fn = toolCall.function;
       const args = JSON.parse(fn.arguments);
 
+      let output = "";
       if (fn.name === 'delegateToScheduler') {
-        // Pass the refined instruction, not the raw query
-        const output = await handleSchedulerRequest(args.instruction);
-        return `[Scheduler Active] ${output}`;
+        output = await handleSchedulerRequest(args.instruction);
       } else if (fn.name === 'delegateToResearcher') {
-        const output = await handleResearcherRequest(args.instruction);
-        return `[Researcher Active] ${output}`;
+        output = await handleResearcherRequest(args.instruction);
       }
+
+      // Final summarization step for Main Agent
+      const secondResponse = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: [
+          ...messages,
+          {
+            role: assistantMessage.role,
+            content: assistantMessage.content || '',
+            tool_calls: assistantMessage.tool_calls,
+          },
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: output,
+          },
+        ],
+      });
+
+      return secondResponse.choices[0].message.content;
     }
 
-    return message.content;
+    return assistantMessage.content;
   } catch (error) {
     console.error('Main Agent Error:', error);
-    return "I'm sorry, I'm having trouble processing your request right now.";
+    return "I'm sorry, I'm having trouble processing your request.";
   }
 }
