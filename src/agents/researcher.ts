@@ -2,6 +2,7 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
+// Define tools for function calling
 const tools = [
   {
     type: 'function',
@@ -11,7 +12,10 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'The search query string.' },
+          query: {
+            type: 'string',
+            description: 'The search query string.',
+          },
         },
         required: ['query'],
       },
@@ -25,7 +29,10 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          url: { type: 'string', description: 'The full URL of the webpage to read.' },
+          url: {
+            type: 'string',
+            description: 'The full URL of the webpage to read.',
+          },
         },
         required: ['url'],
       },
@@ -35,7 +42,7 @@ const tools = [
 
 export async function handleResearcherRequest(instruction: string) {
   if (!instruction || !instruction.trim()) {
-    return "I received an empty instruction.";
+    return "I received an empty instruction. Please provide a topic to research.";
   }
 
   console.log('[Researcher Agent] Received instruction:', instruction);
@@ -69,26 +76,24 @@ export async function handleResearcherRequest(instruction: string) {
         toolResult = await _readWebpage(functionArgs.url);
       }
 
-      // 2. Proper Tool Response Call
+      // Log tool result for debugging
+      const toolResultStr = JSON.stringify(toolResult);
+      console.log(`[Researcher Agent] Tool Result Preview: ${toolResultStr.substring(0, 500)}...`);
+
+      // 2. Manual Injection Summary Call (Robust Pattern)
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: RESEARCHER_PROMPT },
-          { role: 'user', content: instruction },
-          // Assistant message must be exactly as received (or reconstructed cleanly)
-          {
-            role: 'assistant',
-            content: assistantMessage.content || '',
-            tool_calls: assistantMessage.tool_calls,
-          },
-          // Tool message with result
-          {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult),
+          { 
+            role: 'user', 
+            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${toolResultStr}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
           },
         ],
       });
+
+      // Log full response object
+      console.log('[Researcher Agent] Full LLM Response Object:', JSON.stringify(secondResponse, null, 2));
 
       const finalContent = secondResponse.choices[0].message.content;
       console.log(`[Researcher Agent] Final response length: ${finalContent?.length || 0}`);

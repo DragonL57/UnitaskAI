@@ -9,7 +9,7 @@ export async function search(query: string) {
     include_answer: true,
     include_images: false,
     include_raw_content: false,
-    max_results: 3,
+    max_results: 10,
   };
 
   console.log('[Tavily] Searching with query:', query);
