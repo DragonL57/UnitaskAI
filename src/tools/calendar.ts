@@ -2,13 +2,17 @@ import { google } from 'googleapis';
 
 console.log('Initializing Google Calendar Tool (Explicit Auth)...');
 console.log('GOOGLE_CLIENT_EMAIL:', process.env.GOOGLE_CLIENT_EMAIL);
-console.log('GOOGLE_PRIVATE_KEY length:', process.env.GOOGLE_PRIVATE_KEY?.length);
+
+let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+if (privateKey) {
+  // Handle both literal \n and actual newlines
+  privateKey = privateKey.replace(/\\n/g, '\n');
+  console.log('Private Key Header:', privateKey.substring(0, 30) + '...');
+} else {
+  console.error('GOOGLE_PRIVATE_KEY is missing!');
+}
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
-
-const privateKey = process.env.GOOGLE_PRIVATE_KEY
-  ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-  : undefined;
 
 const auth = new google.auth.JWT(
   process.env.GOOGLE_CLIENT_EMAIL,
