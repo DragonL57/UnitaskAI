@@ -48,6 +48,7 @@ export async function handleResearcherRequest(instruction: string) {
   console.log('[Researcher Agent] Received instruction:', instruction);
 
   try {
+    // 1. Tool Selection Call
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: [
@@ -69,12 +70,7 @@ export async function handleResearcherRequest(instruction: string) {
       console.log(`[Researcher Agent] Calling tool: ${functionName}`);
 
       let toolResult;
-      
       if (functionName === 'search') {
-        if (!functionArgs.query) {
-            console.error('[Researcher Agent] Tool called with empty query.');
-            return "I couldn't formulate a search query.";
-        }
         toolResult = await _search(functionArgs.query);
       } else if (functionName === 'readWebpage') {
         toolResult = await _readWebpage(functionArgs.url);
@@ -82,16 +78,14 @@ export async function handleResearcherRequest(instruction: string) {
 
       console.log(`[Researcher Agent] Tool result length: ${JSON.stringify(toolResult).length}`);
 
+      // 2. Manual Injection Summary Call (Robust Pattern)
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: RESEARCHER_PROMPT },
-          { role: 'user', content: instruction },
-          message,
           {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult),
+            role: 'user', 
+            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
           },
         ],
       });

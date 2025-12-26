@@ -23,9 +23,9 @@ const tools = [
         type: 'object',
         properties: {
           summary: { type: 'string', description: 'Title of the event' },
-          start: { type: 'string', description: 'ISO 8601 start date-time string (e.g., 2023-10-27T10:00:00Z)' },
+          start: { type: 'string', description: 'ISO 8601 start date-time string' },
           end: { type: 'string', description: 'ISO 8601 end date-time string' },
-          description: { type: 'string', description: 'Optional description of the event' },
+          description: { type: 'string', description: 'Optional description' },
         },
         required: ['summary', 'start', 'end'],
       },
@@ -71,6 +71,8 @@ export async function handleSchedulerRequest(instruction: string) {
       const args = JSON.parse(fn.arguments);
       let result;
 
+      console.log(`[Scheduler Agent] Calling tool: ${fn.name}`);
+
       if (fn.name === 'listEvents') {
         result = await listEvents();
       } else if (fn.name === 'createEvent') {
@@ -79,16 +81,14 @@ export async function handleSchedulerRequest(instruction: string) {
         result = await checkConflicts(args.start, args.end);
       }
 
+      // Manual Injection Summary Call
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: instruction },
-          message,
           {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(result),
+            role: 'user',
+            content: `Instruction: ${instruction}\n\nI have accessed the user's calendar and retrieved the following raw data:\n\n${JSON.stringify(result)}\n\nNow, please provide a clear and helpful response to the user based on this data.`,
           },
         ],
       });

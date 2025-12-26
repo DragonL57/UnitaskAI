@@ -39,5 +39,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Fix Polling & Researcher Response
+## [x] Track: Fix Polling & Researcher Response
 *Link: [./conductor/tracks/fix_polling_researcher_20251226/](./conductor/tracks/fix_polling_researcher_20251226/)*
+
+---
+
+## [ ] Track: Fix Researcher Agent Summarization
+*Link: [./conductor/tracks/fix_researcher_summarization_20251226/](./conductor/tracks/fix_researcher_summarization_20251226/)*

@@ -7,6 +7,10 @@ if (!process.env.POE_API_KEY) {
 export const poe = new OpenAI({
   apiKey: process.env.POE_API_KEY,
   baseURL: 'https://api.poe.com/v1',
+  defaultHeaders: {
+    'X-Title': 'Unitask AI Companion',
+    'HTTP-Referer': 'https://unitask-ai.vercel.app',
+  },
 });
 
 export const MODEL_NAME = 'grok-4.1-fast-non-reasoning';
