@@ -10,7 +10,7 @@ This plan outlines the steps to build the multi-agent chatbot companion.
 
 ## Phase 2: Tool Implementation
 - [x] Task: Implement Google Calendar tool (List, Create, Conflict resolution) 02f3850
-- [~] Task: Implement Tavily Search tool (Search, Read Webpage)
+- [x] Task: Implement Tavily Search tool (Search, Read Webpage) 98c2994
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Tool Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Agent Implementation
