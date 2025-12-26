@@ -1,6 +1,8 @@
 import { google } from 'googleapis';
 
 console.log('Initializing Google Calendar Tool (Explicit Auth)...');
+console.log('GOOGLE_CLIENT_EMAIL:', process.env.GOOGLE_CLIENT_EMAIL);
+console.log('GOOGLE_PRIVATE_KEY length:', process.env.GOOGLE_PRIVATE_KEY?.length);
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
