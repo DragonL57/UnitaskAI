@@ -44,5 +44,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Fix Researcher Agent Summarization
+## [x] Track: Fix Researcher Agent Summarization
 *Link: [./conductor/tracks/fix_researcher_summarization_20251226/](./conductor/tracks/fix_researcher_summarization_20251226/)*
+
+---
+
+## [ ] Track: Debug Researcher 0-Length & Scale Search
+*Link: [./conductor/tracks/debug_researcher_scale_20251226/](./conductor/tracks/debug_researcher_scale_20251226/)*
