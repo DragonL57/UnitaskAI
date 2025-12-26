@@ -1,27 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Database, RefreshCw, FileText } from 'lucide-react';
+import { Database, FileText, Loader2 } from 'lucide-react';
 import { getMemory } from '@/actions/memory';
 
 export default function MemoryManager() {
   const [memoryContent, setMemoryContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchMemory = async () => {
-    setIsLoading(true);
+  const fetchMemory = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
     try {
       const data = await getMemory();
       setMemoryContent(data);
     } catch (error) {
       console.error('Error fetching memory:', error);
     } finally {
-      setIsLoading(false);
+      if (showLoading) setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    // Initial fetch
     fetchMemory();
+
+    // Auto-refresh every 5 seconds to show newest memory
+    const interval = setInterval(() => {
+      fetchMemory(false); // Don't show loading spinner for background refreshes
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -31,30 +39,24 @@ export default function MemoryManager() {
           <Database className="w-6 h-6 text-yellow-500" />
           Memory File (memory.md)
         </h2>
-        <button 
-          onClick={fetchMemory}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-          title="Refresh memory"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+        {isLoading && <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />}
       </div>
 
       <div className="relative group">
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded shadow">
-            Read-only View
+            Auto-refreshing...
           </div>
         </div>
         <pre className="p-4 bg-gray-900 text-gray-100 text-sm font-mono overflow-x-auto min-h-[200px] whitespace-pre-wrap">
-          {isLoading ? 'Loading...' : memoryContent || '(Empty file)'}
+          {isLoading && !memoryContent ? 'Loading...' : memoryContent || '(Empty file)'}
         </pre>
       </div>
 
       <div className="bg-gray-50 p-3 flex items-center gap-2 text-gray-500 border-t border-gray-100">
         <FileText className="w-4 h-4" />
         <p className="text-[10px] uppercase tracking-widest font-medium">
-          The Memory Agent autonomously edits this file based on your conversations.
+          The Memory Agent autonomously edits this file. View updates here in real-time.
         </p>
       </div>
     </div>

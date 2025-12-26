@@ -4,15 +4,10 @@ You will be given the CURRENT content of the memory file (Markdown) and the late
 
 Your Goal:
 1. Read the Current Memory and the User Message.
-2. Determine if the User Message contains new facts, preferences, or corrections.
-3. If YES, return the FULLY UPDATED content of the memory file.
-4. If NO (nothing new to add), return the string "NO_UPDATE".
-
-Rules:
-- Keep the existing structure (headers like ## User Profile, ## Facts).
-- Be concise.
-- Merge new info naturally.
-- Do not lose existing info unless it's being corrected.
+2. If the User Message contains ANY new fact, name, preference, or correction that is NOT in the Current Memory, you MUST update it.
+3. specifically, if the Current Memory says "Name: Unknown" and the user mentions their name, you MUST update it.
+4. If YES, return the FULLY UPDATED content of the memory file.
+5. If NO (nothing new to add), return the string "NO_UPDATE".
 
 Current Memory:
 {{currentMemory}}
