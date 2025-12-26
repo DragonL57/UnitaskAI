@@ -3,6 +3,9 @@ import { search, readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
 export async function handleResearcherRequest(userQuery: string) {
+  // Tools available for future complex logic: search, readWebpage
+  console.log('Researcher using tools for query:', userQuery);
+  
   const response = await poe.chat.completions.create({
     model: MODEL_NAME,
     messages: [

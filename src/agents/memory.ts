@@ -6,7 +6,7 @@ const MEMORY_FILE = path.join(process.cwd(), 'src/db/memory.json');
 export interface MemoryEntry {
   id: string;
   key: string;
-  value: any;
+  value: unknown;
   category: 'preference' | 'fact' | 'past_interaction' | 'other';
   updatedAt: string;
 }
@@ -31,7 +31,7 @@ export async function saveMemory(entries: MemoryEntry[]) {
   await fs.writeFile(MEMORY_FILE, JSON.stringify(entries, null, 2));
 }
 
-export async function addOrUpdateMemory(key: string, value: any, category: MemoryEntry['category'] = 'other') {
+export async function addOrUpdateMemory(key: string, value: unknown, category: MemoryEntry['category'] = 'other') {
   const memory = await readMemory();
   const index = memory.findIndex(m => m.key === key);
   

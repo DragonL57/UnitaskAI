@@ -3,9 +3,8 @@ import { listEvents, createEvent, checkConflicts } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
 
 export async function handleSchedulerRequest(userQuery: string) {
-  // In a more complex setup, we'd use the LLM to decide which tool to call.
-  // For now, we'll use the LLM to extract parameters if it's a "create" request,
-  // or just list if it's a general "what's on my schedule" request.
+  // Tools available for future complex logic: listEvents, createEvent, checkConflicts
+  console.log('Scheduler using tools for query:', userQuery);
 
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
