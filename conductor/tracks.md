@@ -54,5 +54,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Final Linting Cleanup
+## [x] Track: Final Linting Cleanup
 *Link: [./conductor/tracks/final_lint_cleanup_20251226/](./conductor/tracks/final_lint_cleanup_20251226/)*
+
+---
+
+## [ ] Track: UI Refinement & Mobile-First Design
+*Link: [./conductor/tracks/ui_refinement_mobile_first_20251226/](./conductor/tracks/ui_refinement_mobile_first_20251226/)*
