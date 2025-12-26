@@ -64,5 +64,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Implement Streaming & Markdown Rendering
+## [x] Track: Implement Streaming & Markdown Rendering
 *Link: [./conductor/tracks/streaming_markdown_20251226/](./conductor/tracks/streaming_markdown_20251226/)*
+
+---
+
+## [ ] Track: Refine Orchestration: Main Agent as Sole Voice
+*Link: [./conductor/tracks/main_agent_sole_voice_20251226/](./conductor/tracks/main_agent_sole_voice_20251226/)*
