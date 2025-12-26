@@ -2,11 +2,11 @@
 
 This plan outlines the steps to polish the UI and ensure mobile-first usability.
 
-## Phase 1: Layout & Core Responsiveness
-- [ ] Task: Refactor `src/app/page.tsx` for mobile-first layout (responsive padding and max-widths)
-- [ ] Task: Update `src/components/Chat.tsx` for full-height mobile view and fixed input bar
-- [ ] Task: Improve spacing and typography across all components
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Layout & Core Responsiveness' (Protocol in workflow.md)
+## Phase 1: Layout & Core Responsiveness [checkpoint: b69a895]
+- [x] Task: Refactor `src/app/page.tsx` for mobile-first layout (responsive padding and max-widths) b69a895
+- [x] Task: Update `src/components/Chat.tsx` for full-height mobile view and fixed input bar b69a895
+- [x] Task: Improve spacing and typography across all components b69a895
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Layout & Core Responsiveness' (Protocol in workflow.md) b69a895
 
 ## Phase 2: Component Polishing
 - [ ] Task: Refine agent status indicators for better mobile visibility
