@@ -1,4 +1,5 @@
 import Chat from '@/components/Chat';
+import MemoryManager from '@/components/MemoryManager';
 
 export default function Home() {
   return (
@@ -10,6 +11,8 @@ export default function Home() {
         </header>
         
         <Chat />
+
+        <MemoryManager />
         
         <footer className="text-center text-sm text-gray-500 pb-4">
           Built for personal use. Multi-agent architecture powered by Poe API.
