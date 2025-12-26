@@ -10,11 +10,12 @@ const auth = new google.auth.JWT(
 );
 
 const calendar = google.calendar({ version: 'v3', auth });
+const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 
 export async function listEvents(timeMin: string = new Date().toISOString()) {
   try {
     const res = await calendar.events.list({
-      calendarId: 'primary',
+      calendarId: CALENDAR_ID,
       timeMin,
       maxResults: 10,
       singleEvents: true,
@@ -30,7 +31,7 @@ export async function listEvents(timeMin: string = new Date().toISOString()) {
 export async function createEvent(summary: string, start: string, end: string, description?: string) {
   try {
     const res = await calendar.events.insert({
-      calendarId: 'primary',
+      calendarId: CALENDAR_ID,
       requestBody: {
         summary,
         description,
@@ -48,7 +49,7 @@ export async function createEvent(summary: string, start: string, end: string, d
 export async function checkConflicts(start: string, end: string) {
   try {
     const res = await calendar.events.list({
-      calendarId: 'primary',
+      calendarId: CALENDAR_ID,
       timeMin: start,
       timeMax: end,
       singleEvents: true,
