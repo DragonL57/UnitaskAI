@@ -19,5 +19,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Refactor Memory to Code-Style Diffing
+## [x] Track: Refactor Memory to Code-Style Diffing
 *Link: [./conductor/tracks/refactor_memory_diff_20251226/](./conductor/tracks/refactor_memory_diff_20251226/)*
+
+---
+
+## [ ] Track: Migrate Memory to Vercel Blob Storage
+*Link: [./conductor/tracks/migrate_memory_vercel_blob_20251226/](./conductor/tracks/migrate_memory_vercel_blob_20251226/)*

@@ -1,7 +1,7 @@
 # User Memory
 
 ## User Profile
-- **Name:** Unknown
+- **Name:** Long
 - **Preferences:** None recorded yet.
 
 ## Facts

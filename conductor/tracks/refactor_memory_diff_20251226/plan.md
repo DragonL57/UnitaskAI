@@ -9,7 +9,7 @@ This plan outlines the steps to convert the memory system.
 - [x] Task: Update `src/agents/main.ts` to inject the raw Markdown content into the system prompt 3ef8601
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Refactor' (Protocol in workflow.md) 3ef8601
 
-## Phase 2: Frontend Update
-- [ ] Task: Update `src/actions/memory.ts` to return string content instead of JSON
-- [ ] Task: Update `src/components/MemoryManager.tsx` to display Markdown (text area or preview)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Update' (Protocol in workflow.md)
+## Phase 2: Frontend Update [checkpoint: 7f1e4ce]
+- [x] Task: Update `src/actions/memory.ts` to return string content instead of JSON 7f1e4ce
+- [x] Task: Update `src/components/MemoryManager.tsx` to display Markdown (text area or preview) 7f1e4ce
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Update' (Protocol in workflow.md) 7f1e4ce
