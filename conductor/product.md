@@ -27,3 +27,4 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Silent Memory:** The Memory Agent now acts as a background observer, autonomously identifying and saving user facts without explicit commands.
 - **Code-Style Memory:** Memory is now stored in a human-readable Markdown file (`memory.md`), treating personal data as a "living document" that the AI edits.
 - **Explicit Delegation:** The Main Agent now uses a manager-worker pattern, generating clear, specific instructions for specialized agents rather than passing raw queries.
+- **Researcher Performance:** The Researcher Agent now consistently delivers summaries for up to 10 search results using a robust manual injection architecture.

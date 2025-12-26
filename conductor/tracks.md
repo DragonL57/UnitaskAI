@@ -49,5 +49,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Debug Researcher 0-Length & Scale Search
+## [x] Track: Debug Researcher 0-Length & Scale Search
 *Link: [./conductor/tracks/debug_researcher_scale_20251226/](./conductor/tracks/debug_researcher_scale_20251226/)*
+
+---
+
+## [ ] Track: Final Linting Cleanup
+*Link: [./conductor/tracks/final_lint_cleanup_20251226/](./conductor/tracks/final_lint_cleanup_20251226/)*
