@@ -9,5 +9,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Implement persistent chat history
+## [x] Track: Implement persistent chat history
 *Link: [./conductor/tracks/persistent_chat_history_20251226/](./conductor/tracks/persistent_chat_history_20251226/)*
+
+---
+
+## [ ] Track: Enhance Memory Agent with Tool Calling
+*Link: [./conductor/tracks/enhance_memory_tool_20251226/](./conductor/tracks/enhance_memory_tool_20251226/)*
