@@ -1,5 +1,5 @@
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { readMemory, addOrUpdateMemory } from '@/agents/memory';
+import { readMemory } from '@/agents/memory';
 import { handleSchedulerRequest } from '@/agents/scheduler';
 import { handleResearcherRequest } from '@/agents/researcher';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
@@ -41,19 +41,16 @@ export interface MessageContext {
 }
 
 export async function chat(userQuery: string, history: MessageContext[] = []) {
-  const memoryEntries = await readMemory();
-  const memoryString = memoryEntries
-    .map(m => `- ${m.key}: ${JSON.stringify(m.value)}`)
-    .join('\n');
+  // Read raw markdown memory
+  const memoryContent = await readMemory();
 
   const systemPrompt = MAIN_COMPANION_PROMPT
-    .replace('{{memory}}', memoryString || 'No memory yet.')
+    .replace('{{memory}}', memoryContent || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
-  // Construct the full message chain: System -> History -> Current User Query
   const messages: any[] = [
     { role: 'system', content: systemPrompt },
-    ...history, // Inject conversation history here
+    ...history,
     { role: 'user', content: userQuery }
   ];
 
@@ -79,16 +76,6 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
       } else if (fn.name === 'delegateToResearcher') {
         const output = await handleResearcherRequest(args.query);
         return `[Researcher Active] ${output}`;
-      }
-    }
-
-    // Handle silent memory update logic if not delegated
-    if (userQuery.toLowerCase().startsWith('remember')) {
-      const parts = userQuery.split(' ');
-      if (parts.length > 2) {
-        const key = parts[1];
-        const value = parts.slice(2).join(' ');
-        await addOrUpdateMemory(key, value, 'fact');
       }
     }
 

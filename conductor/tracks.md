@@ -19,5 +19,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Refactor Memory to Code-Style Diffing
+## [~] Track: Refactor Memory to Code-Style Diffing
 *Link: [./conductor/tracks/refactor_memory_diff_20251226/](./conductor/tracks/refactor_memory_diff_20251226/)*
