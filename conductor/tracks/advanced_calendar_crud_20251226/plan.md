@@ -2,9 +2,9 @@
 
 This plan outlines the steps to implement advanced calendar features.
 
-## Phase 1: Tool Expansion
-- [ ] Task: Update `src/tools/calendar.ts` with `updateEvent`, `deleteEvent`, and `searchEvents`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Tool Expansion' (Protocol in workflow.md)
+## Phase 1: Tool Expansion [checkpoint: 9acd2eb]
+- [x] Task: Update `src/tools/calendar.ts` with `updateEvent`, `deleteEvent`, and `searchEvents` 9acd2eb
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Tool Expansion' (Protocol in workflow.md) 9acd2eb
 
 ## Phase 2: Agent Refinement
 - [ ] Task: Update `src/agents/scheduler.ts` to include the new tools in its tool-calling list
