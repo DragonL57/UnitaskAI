@@ -73,7 +73,7 @@ export async function saveMemory(content: string) {
   }
 }
 
-export async function evaluateAndStore(userQuery: string, _history: MessageContext[] = []) {
+export async function evaluateAndStore(userQuery: string) {
   try {
     const currentMemory = await readMemory(true); // Silent read for background task
     const systemPrompt = MEMORY_EVALUATOR_PROMPT

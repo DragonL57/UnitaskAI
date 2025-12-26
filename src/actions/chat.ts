@@ -7,7 +7,7 @@ export async function sendChatMessage(message: string, history: MessageContext[]
   try {
     // Fire-and-forget memory evaluation
     // We don't await this because we don't want to block the user response
-    evaluateAndStore(message, history).catch(err => 
+    evaluateAndStore(message).catch(err => 
       console.error('Background memory evaluation error:', err)
     );
 
