@@ -11,13 +11,16 @@ interface Message {
   agent?: 'scheduler' | 'researcher' | 'memory' | 'main';
 }
 
-export default function Chat() {
+interface ChatProps {
+  activeAgent: 'scheduler' | 'researcher' | 'memory' | 'main' | null;
+}
+
+export default function Chat({ activeAgent }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAgent, setActiveAgent] = useState<'scheduler' | 'researcher' | 'memory' | 'main' | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +37,6 @@ export default function Chat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setActiveAgent('main');
 
     try {
       const history = messages.slice(-10).map(m => ({
@@ -60,67 +62,66 @@ export default function Chat() {
       }]);
     } finally {
       setIsLoading(false);
-      setActiveAgent(null);
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white md:shadow-xl md:rounded-2xl overflow-hidden border-x border-b md:border border-gray-200">
-      {/* Header Info - Compact for mobile */}
-      <div className="bg-gray-50/50 p-3 md:p-4 border-b border-gray-200 flex justify-between items-center shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white">
-            <Bot className="w-5 h-5" />
-          </div>
-          <span className="font-semibold text-gray-700 hidden sm:inline">Active Agents</span>
-        </div>
-        <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
-          <StatusIndicator label="Schedule" active={activeAgent === 'scheduler'} icon={<Calendar className="w-3.5 h-3.5" />} color="bg-green-500" />
-          <StatusIndicator label="Search" active={activeAgent === 'researcher'} icon={<Search className="w-3.5 h-3.5" />} color="bg-purple-500" />
-          <StatusIndicator label="Memory" active={activeAgent === 'memory'} icon={<Database className="w-3.5 h-3.5" />} color="bg-yellow-500" />
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-6 bg-white scroll-smooth">
-        {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-            <div className={`flex max-w-[90%] sm:max-w-[80%] gap-3 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${m.role === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
-                {m.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className={`p-3 md:p-4 rounded-2xl shadow-sm ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
-                  <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.content}</p>
+    <div className="flex flex-col flex-1 h-full w-full bg-white overflow-hidden">
+      {/* Edge-to-edge Message Stream */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-10 bg-white scroll-smooth pb-32">
+        <div className="max-w-4xl mx-auto w-full space-y-10">
+          {messages.map((m) => (
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+              <div className={`flex max-w-[90%] sm:max-w-[85%] gap-4 md:gap-6 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 mt-1 shadow-sm ${m.role === 'user' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {m.role === 'user' ? <User className="w-5 h-5 md:w-6 md:h-6" /> : <Bot className="w-5 h-5 md:w-6 md:h-6" />}
                 </div>
-                {m.agent && m.agent !== 'main' && (
-                  <span className={`text-[10px] uppercase font-bold tracking-widest ${m.role === 'user' ? 'text-right' : 'text-left'} text-gray-400 mt-1 px-1`}>
-                    {m.agent}
-                  </span>
-                )}
+                
+                <div className="flex flex-col gap-2.5">
+                  <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${
+                    m.role === 'user' 
+                      ? 'bg-indigo-600 text-white rounded-tr-none' 
+                      : 'bg-gray-50 text-gray-800 rounded-tl-none border border-transparent'
+                  }`}>
+                    <p className="text-[15px] md:text-[16px] leading-relaxed font-medium whitespace-pre-wrap">{m.content}</p>
+                  </div>
+                  
+                  {m.agent && m.agent !== 'main' && (
+                    <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                      <span className="text-[10px] md:text-[11px] uppercase font-black tracking-widest text-gray-400">
+                        {m.agent}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {isLoading && (
-          <div className="flex justify-start animate-pulse">
-            <div className="flex max-w-[80%] gap-3 items-center">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-gray-400" />
-              </div>
-              <div className="bg-gray-100 p-3 rounded-2xl flex items-center gap-2 text-gray-400 text-sm italic">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Thinking...
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="flex max-w-[80%] gap-4 items-center animate-in fade-in duration-300">
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+                  <Bot className="w-5 h-5 text-gray-300" />
+                </div>
+                <div className="bg-gray-50 px-5 py-3 rounded-full flex items-center gap-3">
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Input - Sticky at bottom */}
-      <div className="p-3 md:p-4 bg-white border-t border-gray-200 shrink-0">
-        <div className="flex gap-2 items-end max-w-4xl mx-auto">
-          <div className="flex-1 bg-gray-50 border border-gray-200 rounded-2xl focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+      {/* Floating Chat Input */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 md:p-8 bg-gradient-to-t from-white via-white to-transparent pointer-events-none">
+        <div className="max-w-4xl mx-auto flex items-end gap-2 md:gap-4 pointer-events-auto">
+          <div className="flex-1 bg-white rounded-[32px] transition-all duration-300 border border-gray-200 shadow-2xl shadow-indigo-100/50 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/5 group px-2">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -131,8 +132,8 @@ export default function Chat() {
                 }
               }}
               rows={1}
-              placeholder="Type your message..."
-              className="w-full bg-transparent border-none focus:ring-0 px-4 py-3 resize-none text-[15px] text-gray-800 max-h-32"
+              placeholder="Message..."
+              className="w-full bg-transparent border-none focus:ring-0 outline-none px-6 py-4 md:py-5 resize-none text-[16px] text-gray-800 max-h-48 min-h-[64px] placeholder:text-gray-400 placeholder:font-bold"
               style={{ height: 'auto' }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -144,9 +145,9 @@ export default function Chat() {
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white p-3.5 rounded-xl transition-all shadow-lg shadow-blue-200 active:scale-95 shrink-0"
+            className="mb-1 w-14 h-14 md:w-16 md:h-16 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-xl shadow-indigo-200 active:scale-90 shrink-0"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-6 h-6 md:w-7 md:h-7 ml-0.5" />
           </button>
         </div>
       </div>
@@ -154,12 +155,12 @@ export default function Chat() {
   );
 }
 
-function StatusIndicator({ label, active, icon, color }: { label: string; active: boolean; icon: React.ReactNode; color: string }) {
+function AgentBadge({ active, color, icon }: { active: boolean; color: string; icon: React.ReactNode }) {
+  if (!active) return null;
   return (
-    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-500 ${active ? `${color} text-white shadow-sm ring-4 ring-white/20` : 'bg-white text-gray-400 border border-gray-100'}`}>
+    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${color} text-white shadow-lg animate-in zoom-in-95 duration-300 ring-2 ring-white`}>
       {icon}
-      <span className={active ? 'block' : 'hidden sm:block'}>{label}</span>
-      {active && <span className="w-1 h-1 bg-white rounded-full animate-pulse" />}
+      <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
     </div>
   );
 }
