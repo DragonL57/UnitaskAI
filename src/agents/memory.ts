@@ -13,8 +13,8 @@ const INITIAL_TEMPLATE = `# User Memory
 ## Facts
 - (None)`;
 
-export async function readMemory(): Promise<string> {
-  console.log('[Memory Agent] Attempting to read memory from Blob...');
+export async function readMemory(silent = false): Promise<string> {
+  if (!silent) console.log('[Memory Agent] Attempting to read memory from Blob...');
   try {
     const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
     const memoryBlob = blobs
@@ -27,14 +27,16 @@ export async function readMemory(): Promise<string> {
       return INITIAL_TEMPLATE;
     }
 
-    console.log(`[Memory Agent] Found memory blob at: ${memoryBlob.url}`);
+    if (!silent) console.log(`[Memory Agent] Found memory blob at: ${memoryBlob.url}`);
+    
+    // Add timestamp to bypass CDN cache
     const cacheBuster = `?t=${Date.now()}`;
     const response = await fetch(memoryBlob.url + cacheBuster, { cache: 'no-store' });
     
     if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
     
     const content = await response.text();
-    console.log(`[Memory Agent] Successfully read ${content.length} characters.`);
+    if (!silent) console.log(`[Memory Agent] Successfully read ${content.length} characters.`);
     return content;
   } catch (error) {
     console.error('[Memory Agent] Error reading memory from Blob:', error);
@@ -48,7 +50,9 @@ export async function saveMemory(content: string) {
     // Delete old blobs to ensure clean state
     const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
     const existing = blobs.filter(b => b.pathname === MEMORY_FILE_NAME);
+    
     if (existing.length > 0) {
+      // console.log(`[Memory Agent] Deleting ${existing.length} old blob(s)...`); // Reduce noise
       await del(existing.map(b => b.url));
     }
 
@@ -58,11 +62,10 @@ export async function saveMemory(content: string) {
     });
     console.log(`[Memory Agent] Memory successfully saved! URL: ${blob.url}`);
     
-    // Try to revalidate path if running in a context that supports it
     try {
       revalidatePath('/');
     } catch (e) {
-      // Ignored if outside request context
+      // Ignored
     }
   } catch (error) {
     console.error('[Memory Agent] Error saving memory to Blob:', error);
@@ -72,7 +75,7 @@ export async function saveMemory(content: string) {
 
 export async function evaluateAndStore(userQuery: string, history: MessageContext[] = []) {
   try {
-    const currentMemory = await readMemory();
+    const currentMemory = await readMemory(true); // Silent read for background task
     const systemPrompt = MEMORY_EVALUATOR_PROMPT.replace('{{currentMemory}}', currentMemory);
     
     console.log('[Memory Agent] Evaluating message for new facts...');
@@ -88,10 +91,9 @@ export async function evaluateAndStore(userQuery: string, history: MessageContex
 
     if (output.trim() !== 'NO_UPDATE' && output.includes('# User Memory')) {
       console.log('[Memory Agent] Fact detected! Updating memory...');
-      console.log('[Memory Agent] New Content Preview:', output.substring(0, 50) + '...');
       await saveMemory(output);
     } else {
-      console.log('[Memory Agent] No new facts to store. LLM Output:', output);
+      console.log('[Memory Agent] No update. LLM Output:', output.substring(0, 50));
     }
 
   } catch (error) {

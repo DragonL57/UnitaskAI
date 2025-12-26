@@ -34,5 +34,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Fix Researcher Agent & Quiet Memory Polling
+## [~] Track: Fix Researcher Agent & Quiet Memory Polling
 *Link: [./conductor/tracks/fix_researcher_memory_20251226/](./conductor/tracks/fix_researcher_memory_20251226/)*
