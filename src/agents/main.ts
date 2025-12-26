@@ -41,7 +41,7 @@ export interface MessageContext {
   content: string;
 }
 
-export async function chat(userQuery: string, history: MessageContext[] = []) {
+export async function chat(userQuery: string, history: MessageContext[] = [], stream = false) {
   const memoryContent = await readMemory(true);
 
   const systemPrompt = MAIN_COMPANION_PROMPT
@@ -55,10 +55,11 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
   ];
 
   try {
+    // Initial call to check for tool usage (always non-streaming for intent detection)
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: messages,
-      // @ts-expect-error - OpenAI SDK types for tools are strict, but Poe accepts this structure
+      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto',
     });
@@ -73,36 +74,66 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
         const args = JSON.parse(fn.arguments);
 
         let output = "";
+        let agentName = "";
         if (fn.name === 'delegateToScheduler') {
+          agentName = "scheduler";
           output = (await handleSchedulerRequest(args.instruction)) || "";
         } else if (fn.name === 'delegateToResearcher') {
+          agentName = "researcher";
           output = (await handleResearcherRequest(args.instruction)) || "";
+        }
+
+        // Second call for summarization (can be streamed)
+        const summaryMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+          ...messages,
+          {
+            role: assistantMessage.role,
+            content: assistantMessage.content || '',
+            tool_calls: assistantMessage.tool_calls,
+          },
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: output,
+          },
+        ];
+
+        if (stream) {
+          return {
+            stream: await poe.chat.completions.create({
+              model: MODEL_NAME,
+              messages: summaryMessages,
+              stream: true,
+            }),
+            agent: agentName
+          };
         }
 
         const secondResponse = await poe.chat.completions.create({
           model: MODEL_NAME,
-          messages: [
-            ...messages,
-            {
-              role: assistantMessage.role,
-              content: assistantMessage.content || '',
-              tool_calls: assistantMessage.tool_calls,
-            },
-            {
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: output,
-            },
-          ],
+          messages: summaryMessages,
         });
 
-        return secondResponse.choices[0].message.content;
+        return { content: secondResponse.choices[0].message.content, agent: agentName };
       }
     }
 
-    return assistantMessage.content;
+    // Standard chat response (non-tool)
+    if (stream) {
+      return {
+        stream: await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: messages,
+          stream: true,
+        }),
+        agent: 'main'
+      };
+    }
+
+    return { content: assistantMessage.content, agent: 'main' };
+
   } catch (error) {
     console.error('Main Agent Error:', error);
-    return "I'm sorry, I'm having trouble processing your request.";
+    throw error;
   }
 }
