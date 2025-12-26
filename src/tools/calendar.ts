@@ -6,7 +6,6 @@ const client_email = process.env.GOOGLE_CLIENT_EMAIL;
 let private_key = process.env.GOOGLE_PRIVATE_KEY;
 
 if (private_key) {
-  // Handle both literal \n and actual newlines, and remove surrounding quotes if present
   private_key = private_key.replace(/\\n/g, '\n').replace(/^"|"$/g, '');
 }
 
@@ -30,13 +29,29 @@ export async function listEvents(timeMin: string = new Date().toISOString()) {
     const res = await calendar.events.list({
       calendarId: CALENDAR_ID,
       timeMin,
-      maxResults: 10,
+      maxResults: 15,
       singleEvents: true,
       orderBy: 'startTime',
     });
     return res.data.items || [];
   } catch (error) {
     console.error('Error listing events:', error);
+    throw error;
+  }
+}
+
+export async function searchEvents(query: string, timeMin: string = new Date().toISOString()) {
+  try {
+    const res = await calendar.events.list({
+      calendarId: CALENDAR_ID,
+      q: query,
+      timeMin,
+      maxResults: 10,
+      singleEvents: true,
+    });
+    return res.data.items || [];
+  } catch (error) {
+    console.error('Error searching events:', error);
     throw error;
   }
 }
@@ -55,6 +70,38 @@ export async function createEvent(summary: string, start: string, end: string, d
     return res.data;
   } catch (error) {
     console.error('Error creating event:', error);
+    throw error;
+  }
+}
+
+export async function updateEvent(eventId: string, summary?: string, start?: string, end?: string, description?: string) {
+  try {
+    const res = await calendar.events.patch({
+      calendarId: CALENDAR_ID,
+      eventId,
+      requestBody: {
+        ...(summary && { summary }),
+        ...(description && { description }),
+        ...(start && { start: { dateTime: start } }),
+        ...(end && { end: { dateTime: end } }),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+}
+
+export async function deleteEvent(eventId: string) {
+  try {
+    await calendar.events.delete({
+      calendarId: CALENDAR_ID,
+      eventId,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting event:', error);
     throw error;
   }
 }
