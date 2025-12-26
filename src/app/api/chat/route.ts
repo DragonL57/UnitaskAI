@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
           controller.enqueue(new TextEncoder().encode(`__AGENT__:${result.agent}\n`));
 
           try {
-            // @ts-ignore
+            // @ts-expect-error - OpenAI SDK stream types vary between versions, Poe's stream is compatible with for-await
             for await (const chunk of result.stream) {
               const content = chunk.choices[0]?.delta?.content || '';
               if (content) {

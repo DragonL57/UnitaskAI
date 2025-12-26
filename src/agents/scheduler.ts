@@ -3,7 +3,7 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { listEvents, createEvent, checkConflicts, searchEvents, updateEvent, deleteEvent } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
 
-const tools = [
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -106,7 +106,6 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
         { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction },
       ],
-      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto',
     });
@@ -114,7 +113,7 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      const toolCall = assistantMessage.tool_calls[0];
       
       if (toolCall.type === 'function') {
         const fn = toolCall.function;

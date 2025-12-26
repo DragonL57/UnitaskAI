@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Database, FileText, Loader2, RefreshCw, Sparkles } from 'lucide-react';
+import { FileText, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { getMemory } from '@/actions/memory';
 
 export default function MemoryManager() {

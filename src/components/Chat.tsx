@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, Loader2, Calendar, Search, Database } from 'lucide-react';
+import { Send, User, Bot, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { sendChatMessage } from '@/actions/chat';
 
 interface Message {
   id: string;
@@ -19,7 +18,6 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAgent, setActiveAgent] = useState<'scheduler' | 'researcher' | 'memory' | 'main' | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +34,6 @@ export default function Chat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setActiveAgent('main');
 
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: Message = { id: assistantMessageId, role: 'assistant', content: '', agent: 'main' };
@@ -75,8 +72,7 @@ export default function Chat() {
             const metadataLine = lines.find(l => l.startsWith('__AGENT__:'));
             
             if (metadataLine) {
-              const agentName = metadataLine.split(':')[1].trim() as any;
-              setActiveAgent(agentName);
+              const agentName = metadataLine.split(':')[1].trim() as Message['agent'];
               setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, agent: agentName } : m));
               hasParsedMetadata = true;
               
@@ -100,12 +96,12 @@ export default function Chat() {
       ));
     } finally {
       setIsLoading(false);
-      setActiveAgent(null);
     }
   };
 
   return (
     <div className="flex flex-col flex-1 h-full w-full bg-white overflow-hidden relative">
+      {/* Message Stream */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-10 bg-white scroll-smooth">
         <div className="max-w-4xl mx-auto w-full space-y-10">
           {messages.map((m) => (
@@ -148,10 +144,13 @@ export default function Chat() {
               </div>
             </div>
           ))}
+          
+          {/* Explicit spacer to prevent content overlap with floating input */}
           <div className="h-32 md:h-40 shrink-0" />
         </div>
       </div>
 
+      {/* Floating Chat Input Area */}
       <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none z-20">
         <div className="max-w-4xl mx-auto flex items-end gap-2 md:gap-4 pointer-events-auto">
           <div className="flex-1 bg-white rounded-[32px] transition-all duration-300 border border-gray-200 shadow-2xl shadow-indigo-100/50 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/5 group px-2">
@@ -184,16 +183,6 @@ export default function Chat() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function AgentBadge({ active, color, icon }: { active: boolean; color: string; icon: React.ReactNode }) {
-  if (!active) return null;
-  return (
-    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${color} text-white shadow-lg animate-in zoom-in-95 duration-300 ring-2 ring-white`}>
-      {icon}
-      <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
     </div>
   );
 }

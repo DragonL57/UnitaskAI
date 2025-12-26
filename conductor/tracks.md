@@ -74,5 +74,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Resolve Final Linting & Type Issues
+## [~] Track: Resolve Final Linting & Type Issues
 *Link: [./conductor/tracks/resolve_final_linting_20251226/](./conductor/tracks/resolve_final_linting_20251226/)*

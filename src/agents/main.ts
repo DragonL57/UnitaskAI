@@ -5,7 +5,7 @@ import { handleSchedulerRequest } from '@/agents/scheduler';
 import { handleResearcherRequest } from '@/agents/researcher';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
 
-const tools = [
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -50,7 +50,7 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
-    ...history,
+    ...history.map(m => ({ role: m.role, content: m.content } as OpenAI.Chat.Completions.ChatCompletionMessageParam)),
     { role: 'user', content: userQuery }
   ];
 
@@ -59,7 +59,6 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: messages,
-      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto',
     });

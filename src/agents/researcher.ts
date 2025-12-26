@@ -3,7 +3,7 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
-const tools = [
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: 'function',
     function: {
@@ -54,7 +54,6 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
         { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction },
       ],
-      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto', 
     });
@@ -62,7 +61,7 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      const toolCall = assistantMessage.tool_calls[0];
       
       if (toolCall.type === 'function') {
         const functionName = toolCall.function.name;
@@ -82,13 +81,9 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
           model: MODEL_NAME,
           messages: [
             { role: 'system', content: RESEARCHER_PROMPT },
-            { 
+            {
               role: 'user', 
-              content: `Instruction from Main Agent: "${instruction}"
-
-Search/Reading Results: ${JSON.stringify(toolResult)}
-
-Please provide a clear, comprehensive report for the Main Agent summarizing the findings.` 
+              content: `Instruction from Main Agent: "${instruction}"\n\nSearch/Reading Results: ${JSON.stringify(toolResult)}\n\nPlease provide a clear, comprehensive report for the Main Agent summarizing the findings.` 
             },
           ],
         });
