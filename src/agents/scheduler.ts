@@ -1,29 +1,105 @@
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { listEvents as _listEvents, createEvent as _createEvent, checkConflicts as _checkConflicts } from '@/tools/calendar';
+import { listEvents, createEvent, checkConflicts } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
 
-export async function handleSchedulerRequest(userQuery: string) {
-  // Tools available for future complex logic: listEvents, createEvent, checkConflicts
-  console.log('Scheduler using tools for query:', userQuery);
+const tools = [
+  {
+    type: 'function',
+    function: {
+      name: 'listEvents',
+      description: 'List the upcoming events on the user\'s calendar.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'createEvent',
+      description: 'Create a new event on the user\'s calendar.',
+      parameters: {
+        type: 'object',
+        properties: {
+          summary: { type: 'string', description: 'Title of the event' },
+          start: { type: 'string', description: 'ISO 8601 start date-time string (e.g., 2023-10-27T10:00:00Z)' },
+          end: { type: 'string', description: 'ISO 8601 end date-time string' },
+          description: { type: 'string', description: 'Optional description of the event' },
+        },
+        required: ['summary', 'start', 'end'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'checkConflicts',
+      description: 'Check if a specific time range has any conflicting events.',
+      parameters: {
+        type: 'object',
+        properties: {
+          start: { type: 'string', description: 'ISO 8601 start date-time string' },
+          end: { type: 'string', description: 'ISO 8601 end date-time string' },
+        },
+        required: ['start', 'end'],
+      },
+    },
+  },
+];
 
+export async function handleSchedulerRequest(userQuery: string) {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
-  const response = await poe.chat.completions.create({
-    model: MODEL_NAME,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userQuery },
-    ],
-    // We can use function calling if supported, but let's keep it simple for now 
-    // and ask for a structured response from the LLM to decide.
-    // Or we can just let the LLM describe what it wants to do.
-  });
+  try {
+    const response = await poe.chat.completions.create({
+      model: MODEL_NAME,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userQuery },
+      ],
+      // @ts-ignore
+      tools: tools,
+      tool_choice: 'auto',
+    });
 
-  const intent = response.choices[0].message.content;
-  
-  // This is a simplified version. A real implementation would parse the intent.
-  // For the sake of this track, let's assume the Main Agent will route to specific tools,
-  // but the Scheduler Agent provides the high-level logic.
+    const message = response.choices[0].message;
 
-  return intent;
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      const toolCall = message.tool_calls[0];
+      const fn = toolCall.function;
+      const args = JSON.parse(fn.arguments);
+      let result;
+
+      if (fn.name === 'listEvents') {
+        result = await listEvents();
+      } else if (fn.name === 'createEvent') {
+        result = await createEvent(args.summary, args.start, args.end, args.description);
+      } else if (fn.name === 'checkConflicts') {
+        result = await checkConflicts(args.start, args.end);
+      }
+
+      const secondResponse = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userQuery },
+          message,
+          {
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(result),
+          },
+        ],
+      });
+
+      return secondResponse.choices[0].message.content;
+    }
+
+    return message.content;
+
+  } catch (error) {
+    console.error('Scheduler Agent Error:', error);
+    return "I encountered an error while accessing your calendar.";
+  }
 }
