@@ -19,7 +19,10 @@ export async function sendChatMessage(message: string) {
       agent
     };
   } catch (error) {
-    console.error('Server Action Error:', error);
-    throw new Error('Failed to process message');
+    console.error('Server Action Error in sendChatMessage:', error);
+    if (error instanceof Error) {
+        return { content: `Error: ${error.message}`, agent: 'main' };
+    }
+    return { content: 'An unexpected error occurred while processing your request.', agent: 'main' };
   }
 }
