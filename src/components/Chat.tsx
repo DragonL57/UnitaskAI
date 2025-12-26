@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, Loader2, Calendar, Search, Database } from 'lucide-react';
+import { sendChatMessage } from '@/actions/chat';
 
 interface Message {
   id: string;
@@ -36,21 +37,23 @@ export default function Chat() {
     setActiveAgent('main');
 
     try {
-      // Logic for sending to server action will go here in the next task
-      // For now, this is just a UI skeleton
-      setTimeout(() => {
-        const botMessage: Message = { 
-          id: (Date.now() + 1).toString(), 
-          role: 'assistant', 
-          content: 'This is a placeholder response. I will be connected to the agents in the next step!',
-          agent: 'main'
-        };
-        setMessages(prev => [...prev, botMessage]);
-        setIsLoading(false);
-        setActiveAgent(null);
-      }, 1000);
+      const result = await sendChatMessage(input);
+      
+      const botMessage: Message = { 
+        id: (Date.now() + 1).toString(), 
+        role: 'assistant', 
+        content: result.content,
+        agent: result.agent
+      };
+      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please check your API keys and try again.'
+      }]);
+    } finally {
       setIsLoading(false);
       setActiveAgent(null);
     }
