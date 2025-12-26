@@ -85,7 +85,7 @@ export default function MemoryManager() {
       </div>
       <div className="bg-gray-50 p-3 text-center border-t border-gray-100">
         <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium">
-          Note: This is your personal companion's persistent memory.
+          Note: This is your personal companion&apos;s persistent memory.
         </p>
       </div>
     </div>
