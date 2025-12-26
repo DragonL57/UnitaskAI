@@ -64,5 +64,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Implement Streaming & Markdown Rendering
+## [~] Track: Implement Streaming & Markdown Rendering
 *Link: [./conductor/tracks/streaming_markdown_20251226/](./conductor/tracks/streaming_markdown_20251226/)*

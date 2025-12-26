@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, Loader2, Calendar, Search, Database } from 'lucide-react';
 import { sendChatMessage } from '@/actions/chat';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   id: string;
@@ -11,16 +13,13 @@ interface Message {
   agent?: 'scheduler' | 'researcher' | 'memory' | 'main';
 }
 
-interface ChatProps {
-  activeAgent: 'scheduler' | 'researcher' | 'memory' | 'main' | null;
-}
-
-export default function Chat({ activeAgent }: ChatProps) {
+export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<'scheduler' | 'researcher' | 'memory' | 'main' | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +36,7 @@ export default function Chat({ activeAgent }: ChatProps) {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setActiveAgent('main');
 
     try {
       const history = messages.slice(-10).map(m => ({
@@ -62,12 +62,13 @@ export default function Chat({ activeAgent }: ChatProps) {
       }]);
     } finally {
       setIsLoading(false);
+      setActiveAgent(null);
     }
   };
 
   return (
     <div className="flex flex-col flex-1 h-full w-full bg-white overflow-hidden">
-      {/* Edge-to-edge Message Stream */}
+      {/* Message Stream */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-10 bg-white scroll-smooth pb-32">
         <div className="max-w-4xl mx-auto w-full space-y-10">
           {messages.map((m) => (
@@ -81,9 +82,14 @@ export default function Chat({ activeAgent }: ChatProps) {
                   <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${
                     m.role === 'user' 
                       ? 'bg-indigo-600 text-white rounded-tr-none' 
-                      : 'bg-gray-50 text-gray-800 rounded-tl-none border border-transparent'
+                      : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
                   }`}>
-                    <p className="text-[15px] md:text-[16px] leading-relaxed font-medium whitespace-pre-wrap">{m.content}</p>
+                    {/* Markdown Renderer */}
+                    <div className={`text-[15px] md:text-[16px] leading-relaxed font-medium markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                   
                   {m.agent && m.agent !== 'main' && (
