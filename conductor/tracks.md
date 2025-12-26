@@ -69,5 +69,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Advanced Calendar CRUD Operations
+## [x] Track: Advanced Calendar CRUD Operations
 *Link: [./conductor/tracks/advanced_calendar_crud_20251226/](./conductor/tracks/advanced_calendar_crud_20251226/)*
+
+---
+
+## [ ] Track: Resolve Final Linting & Type Issues
+*Link: [./conductor/tracks/resolve_final_linting_20251226/](./conductor/tracks/resolve_final_linting_20251226/)*
