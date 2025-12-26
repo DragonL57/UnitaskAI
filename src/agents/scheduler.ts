@@ -1,3 +1,4 @@
+import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { listEvents, createEvent, checkConflicts } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
@@ -63,10 +64,9 @@ export async function handleSchedulerRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
-      // @ts-expect-error - Tool call type inference issue
+      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      
       const fn = toolCall.function;
-      // @ts-expect-error - Tool call type inference issue
       const args = JSON.parse(fn.arguments);
       
       console.log(`[Scheduler Agent] Executing tool: ${fn.name}`);

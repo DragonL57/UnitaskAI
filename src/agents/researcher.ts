@@ -1,3 +1,4 @@
+import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
@@ -63,10 +64,9 @@ export async function handleResearcherRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
-      // @ts-expect-error - Tool call type inference issue
+      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      
       const functionName = toolCall.function.name;
-      // @ts-expect-error - Tool call type inference issue
       const functionArgs = JSON.parse(toolCall.function.arguments);
 
       console.log(`[Researcher Agent] Executing ${functionName}...`);

@@ -66,10 +66,9 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
-      // @ts-expect-error - Tool call type inference issue
+      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      
       const fn = toolCall.function;
-      // @ts-expect-error - Tool call type inference issue
       const args = JSON.parse(fn.arguments);
 
       let output = "";
