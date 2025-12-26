@@ -4,53 +4,88 @@ import { handleSchedulerRequest } from '@/agents/scheduler';
 import { handleResearcherRequest } from '@/agents/researcher';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
 
+const tools = [
+  {
+    type: 'function',
+    function: {
+      name: 'delegateToScheduler',
+      description: 'Delegate the request to the Scheduler Agent for calendar or scheduling tasks.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The user query related to scheduling.' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delegateToResearcher',
+      description: 'Delegate the request to the Researcher Agent for web search or webpage reading tasks.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The user query related to research.' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+];
+
 export async function chat(userQuery: string) {
-  // 1. Read Memory
   const memoryEntries = await readMemory();
   const memoryString = memoryEntries
     .map(m => `- ${m.key}: ${JSON.stringify(m.value)}`)
     .join('\n');
 
-  // 2. Prepare System Prompt
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryString || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
-  // 3. Initial Classification/Response from Main Agent
-  const response = await poe.chat.completions.create({
-    model: MODEL_NAME,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userQuery },
-    ],
-  });
+  try {
+    const response = await poe.chat.completions.create({
+      model: MODEL_NAME,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userQuery },
+      ],
+      // @ts-ignore
+      tools: tools,
+      tool_choice: 'auto',
+    });
 
-  const mainResponse = response.choices[0].message.content;
+    const message = response.choices[0].message;
 
-  // 4. Logic to decide if we need to call other agents 
-  // (In a real implementation, we'd use function calling or more rigorous parsing)
-  // For this prototype, we'll look for keywords as a simple routing mechanism.
-  
-  let finalResponse = mainResponse;
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      const toolCall = message.tool_calls[0];
+      const fn = toolCall.function;
+      const args = JSON.parse(fn.arguments);
 
-  if (userQuery.toLowerCase().includes('schedule') || userQuery.toLowerCase().includes('calendar')) {
-    const schedulerOutput = await handleSchedulerRequest(userQuery);
-    finalResponse = `[Scheduler Active] ${schedulerOutput}`;
-  } else if (userQuery.toLowerCase().includes('search') || userQuery.toLowerCase().includes('find') || userQuery.toLowerCase().includes('http')) {
-    const researcherOutput = await handleResearcherRequest(userQuery);
-    finalResponse = `[Researcher Active] ${researcherOutput}`;
-  }
-
-  // 5. Silent Memory Update (Simple heuristic for now)
-  // If the user says "remember X", we'll store it.
-  if (userQuery.toLowerCase().startsWith('remember')) {
-    const parts = userQuery.split(' ');
-    if (parts.length > 2) {
-      const key = parts[1];
-      const value = parts.slice(2).join(' ');
-      await addOrUpdateMemory(key, value, 'fact');
+      if (fn.name === 'delegateToScheduler') {
+        const output = await handleSchedulerRequest(args.query);
+        return `[Scheduler Active] ${output}`;
+      } else if (fn.name === 'delegateToResearcher') {
+        const output = await handleResearcherRequest(args.query);
+        return `[Researcher Active] ${output}`;
+      }
     }
-  }
 
-  return finalResponse;
+    // Handle silent memory update logic if not delegated
+    if (userQuery.toLowerCase().startsWith('remember')) {
+      const parts = userQuery.split(' ');
+      if (parts.length > 2) {
+        const key = parts[1];
+        const value = parts.slice(2).join(' ');
+        await addOrUpdateMemory(key, value, 'fact');
+      }
+    }
+
+    return message.content;
+  } catch (error) {
+    console.error('Main Agent Error:', error);
+    return "I'm sorry, I'm having trouble processing your request right now.";
+  }
 }
