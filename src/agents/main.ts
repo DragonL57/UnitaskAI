@@ -35,7 +35,12 @@ const tools = [
   },
 ];
 
-export async function chat(userQuery: string) {
+export interface MessageContext {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export async function chat(userQuery: string, history: MessageContext[] = []) {
   const memoryEntries = await readMemory();
   const memoryString = memoryEntries
     .map(m => `- ${m.key}: ${JSON.stringify(m.value)}`)
@@ -45,13 +50,17 @@ export async function chat(userQuery: string) {
     .replace('{{memory}}', memoryString || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
+  // Construct the full message chain: System -> History -> Current User Query
+  const messages: any[] = [
+    { role: 'system', content: systemPrompt },
+    ...history, // Inject conversation history here
+    { role: 'user', content: userQuery }
+  ];
+
   try {
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userQuery },
-      ],
+      messages: messages,
       // @ts-ignore
       tools: tools,
       tool_choice: 'auto',

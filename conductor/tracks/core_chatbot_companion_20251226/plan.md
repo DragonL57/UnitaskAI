@@ -26,7 +26,7 @@ This plan outlines the steps to build the multi-agent chatbot companion.
 - [x] Task: Create memory management interface for user control dcdc036
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Frontend Implementation' (Protocol in workflow.md)
 
-## Phase 5: Integration & Polishing
+## Phase 5: Integration & Polishing [checkpoint: 03ba7a7]
 - [x] Task: Final end-to-end integration of all agents and tools 8e65717
-- [~] Task: Run final linting and type checking across the project
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: Integration & Polishing' (Protocol in workflow.md)
+- [x] Task: Run final linting and type checking across the project 07351a3
+- [x] Task: Conductor - User Manual Verification 'Phase 5: Integration & Polishing' (Protocol in workflow.md) 03ba7a7

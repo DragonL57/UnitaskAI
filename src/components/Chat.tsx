@@ -37,7 +37,13 @@ export default function Chat() {
     setActiveAgent('main');
 
     try {
-      const result = await sendChatMessage(input);
+      // Prepare history: Map to { role, content } and keep last 10 messages
+      const history = messages.slice(-10).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      const result = await sendChatMessage(input, history);
       
       const botMessage: Message = { 
         id: (Date.now() + 1).toString(), 
