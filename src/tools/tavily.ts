@@ -5,7 +5,7 @@ export async function search(query: string) {
   const payload = {
     api_key: apiKey,
     query,
-    search_depth: 'smart',
+    search_depth: 'basic',
     include_answer: true,
     include_images: false,
     include_raw_content: false,

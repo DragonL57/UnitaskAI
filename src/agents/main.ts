@@ -42,7 +42,7 @@ export interface MessageContext {
 
 export async function chat(userQuery: string, history: MessageContext[] = []) {
   // Read raw markdown memory
-  const memoryContent = await readMemory();
+  const memoryContent = await readMemory(true);
 
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryContent || 'No memory yet.')
