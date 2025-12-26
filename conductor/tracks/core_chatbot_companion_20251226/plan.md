@@ -9,7 +9,7 @@ This plan outlines the steps to build the multi-agent chatbot companion.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Project Initialization & LLM Setup' (Protocol in workflow.md)
 
 ## Phase 2: Tool Implementation
-- [~] Task: Implement Google Calendar tool (List, Create, Conflict resolution)
+- [x] Task: Implement Google Calendar tool (List, Create, Conflict resolution) 02f3850
 - [ ] Task: Implement Tavily Search tool (Search, Read Webpage)
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Tool Implementation' (Protocol in workflow.md)
 
