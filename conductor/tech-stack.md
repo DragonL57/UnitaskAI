@@ -31,5 +31,5 @@ This document outlines the core technologies and architectural choices for the m
 
 ## Implementation Details
 - **Authentication:** Uses `google.auth.GoogleAuth` with Service Account credentials for secure, server-side Google Calendar access.
-- **Orchestration:** Leverages native LLM function calling (tools) for robust and reliable delegation between the Main, Scheduler, and Researcher agents.
+- **Orchestration:** Implements a manager-worker pattern using native LLM function calling (tools). The Main Agent refines user intent into specific instructions before delegating to specialized agents.
 - **Memory:** Implements a "Silent Observer" pattern where a secondary LLM call evaluates user messages in the background to update persistent storage. Moved from JSON to Markdown storage to support "code style" full-text updates and cleaner human readability.

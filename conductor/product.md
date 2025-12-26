@@ -26,3 +26,4 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Context Awareness:** The chatbot now maintains conversation context within a session, allowing for follow-up questions and more natural dialogue.
 - **Silent Memory:** The Memory Agent now acts as a background observer, autonomously identifying and saving user facts without explicit commands.
 - **Code-Style Memory:** Memory is now stored in a human-readable Markdown file (`memory.md`), treating personal data as a "living document" that the AI edits.
+- **Explicit Delegation:** The Main Agent now uses a manager-worker pattern, generating clear, specific instructions for specialized agents rather than passing raw queries.
