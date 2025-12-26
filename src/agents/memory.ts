@@ -76,7 +76,9 @@ export async function saveMemory(content: string) {
 export async function evaluateAndStore(userQuery: string, _history: MessageContext[] = []) {
   try {
     const currentMemory = await readMemory(true); // Silent read for background task
-    const systemPrompt = MEMORY_EVALUATOR_PROMPT.replace('{{currentMemory}}', currentMemory);
+    const systemPrompt = MEMORY_EVALUATOR_PROMPT
+      .replace('{{currentMemory}}', currentMemory)
+      .replace('{{currentTime}}', new Date().toISOString());
     
     console.log('[Memory Agent] Evaluating message for new facts...');
     const response = await poe.chat.completions.create({

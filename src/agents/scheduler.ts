@@ -46,7 +46,11 @@ const tools = [
   },
 ];
 
-export async function handleSchedulerRequest(instruction: string) {
+/**
+ * Scheduler Agent
+ * Refines tool data into a plain-language report for the Main Agent.
+ */
+export async function handleSchedulerRequest(instruction: string): Promise<string> {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
   try {
@@ -56,7 +60,7 @@ export async function handleSchedulerRequest(instruction: string) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction },
       ],
-      // @ts-expect-error - OpenAI SDK types for tools are strict, but Poe accepts this structure
+      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto',
     });
@@ -64,13 +68,13 @@ export async function handleSchedulerRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
+      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
       
       if (toolCall.type === 'function') {
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
         
-        console.log(`[Scheduler Agent] Executing tool: ${fn.name}`);
+        console.log(`[Scheduler Specialist] Executing tool: ${fn.name}`);
 
         let result;
         if (fn.name === 'listEvents') {
@@ -81,32 +85,30 @@ export async function handleSchedulerRequest(instruction: string) {
           result = await checkConflicts(args.start, args.end);
         }
 
+        // Internal report call (Address the Main Agent)
         const secondResponse = await poe.chat.completions.create({
           model: MODEL_NAME,
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: instruction },
-            {
-              role: assistantMessage.role,
-              content: assistantMessage.content || '',
-              tool_calls: assistantMessage.tool_calls,
-            },
-            {
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify(result),
+            { 
+              role: 'user', 
+              content: `Instruction from Main Agent: "${instruction}"
+
+Tool Execution Result: ${JSON.stringify(result)}
+
+Please provide a clear report for the Main Agent summarizing what was done or found.` 
             },
           ],
         });
 
-        return secondResponse.choices[0].message.content;
+        return secondResponse.choices[0].message.content || "I have processed the calendar task but couldn't generate a report.";
       }
     }
 
-    return assistantMessage.content || "I couldn't process your calendar request.";
+    return assistantMessage.content || "No updates from the Scheduler Specialist.";
 
   } catch (error) {
-    console.error('Scheduler Agent Error:', error);
-    return "I encountered an error with your calendar.";
+    console.error('Scheduler Specialist Error:', error);
+    return `Report: Failed to process calendar task due to an error.`;
   }
 }

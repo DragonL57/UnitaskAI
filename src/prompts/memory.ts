@@ -9,6 +9,8 @@ Your Goal:
 4. If YES, return the FULLY UPDATED content of the memory file.
 5. If NO (nothing new to add), return the string "NO_UPDATE".
 
+Current Date/Time: {{currentTime}}
+
 Current Memory:
 {{currentMemory}}
 `;

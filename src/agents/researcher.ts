@@ -3,7 +3,6 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
-// Define tools for function calling
 const tools = [
   {
     type: 'function',
@@ -13,10 +12,7 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          query: {
-            type: 'string',
-            description: 'The search query string.',
-          },
+          query: { type: 'string', description: 'The search query string.' },
         },
         required: ['query'],
       },
@@ -30,10 +26,7 @@ const tools = [
       parameters: {
         type: 'object',
         properties: {
-          url: {
-            type: 'string',
-            description: 'The full URL of the webpage to read.',
-          },
+          url: { type: 'string', description: 'The full URL of the webpage to read.' },
         },
         required: ['url'],
       },
@@ -41,22 +34,27 @@ const tools = [
   },
 ];
 
-export async function handleResearcherRequest(instruction: string) {
+/**
+ * Researcher Agent
+ * Refines tool data into a plain-language report for the Main Agent.
+ */
+export async function handleResearcherRequest(instruction: string): Promise<string> {
   if (!instruction || !instruction.trim()) {
-    return "I received an empty instruction. Please provide a topic to research.";
+    return "Empty instruction provided.";
   }
 
-  console.log('[Researcher Agent] Processing instruction:', instruction);
+  console.log('[Researcher Specialist] Received instruction:', instruction);
+
+  const systemPrompt = RESEARCHER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
   try {
-    // 1. Tool Selection Call
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: [
-        { role: 'system', content: RESEARCHER_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: instruction },
       ],
-      // @ts-expect-error - OpenAI SDK types for tools are strict, but Poe accepts this structure
+      // @ts-expect-error
       tools: tools,
       tool_choice: 'auto', 
     });
@@ -64,13 +62,13 @@ export async function handleResearcherRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
+      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
       
       if (toolCall.type === 'function') {
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
-        console.log(`[Researcher Agent] Executing ${functionName}...`);
+        console.log(`[Researcher Specialist] Executing tool: ${functionName}`);
 
         let toolResult;
         if (functionName === 'search') {
@@ -79,26 +77,30 @@ export async function handleResearcherRequest(instruction: string) {
           toolResult = await _readWebpage(functionArgs.url);
         }
 
-        // 2. Manual Injection Summary Call (Robust Pattern)
+        // Internal report call (Address the Main Agent)
         const secondResponse = await poe.chat.completions.create({
           model: MODEL_NAME,
           messages: [
             { role: 'system', content: RESEARCHER_PROMPT },
-            {
+            { 
               role: 'user', 
-              content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
+              content: `Instruction from Main Agent: "${instruction}"
+
+Search/Reading Results: ${JSON.stringify(toolResult)}
+
+Please provide a clear, comprehensive report for the Main Agent summarizing the findings.` 
             },
           ],
         });
 
-        return secondResponse.choices[0].message.content || "I found the information but couldn't summarize it.";
+        return secondResponse.choices[0].message.content || "I have gathered data but couldn't generate a report.";
       }
     }
 
-    return assistantMessage.content || "I'm not sure how to research that.";
+    return assistantMessage.content || "No findings from the Research Specialist.";
 
   } catch (error) {
-    console.error('Researcher Agent Error:', error);
-    return "I encountered an error while researching.";
+    console.error('Researcher Specialist Error:', error);
+    return "Report: Failed to complete research task due to an error.";
   }
 }

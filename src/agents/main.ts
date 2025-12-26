@@ -10,11 +10,11 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToScheduler',
-      description: 'Command the Scheduler Agent to perform a specific calendar task.',
+      description: 'Command the Scheduler Specialist to perform a specific calendar task.',
       parameters: {
         type: 'object',
         properties: {
-          instruction: { type: 'string', description: 'The refined instruction for the Scheduler Agent.' },
+          instruction: { type: 'string', description: 'The refined command for the Scheduler Specialist.' },
         },
         required: ['instruction'],
       },
@@ -24,11 +24,11 @@ const tools = [
     type: 'function',
     function: {
       name: 'delegateToResearcher',
-      description: 'Command the Researcher Agent to find information.',
+      description: 'Command the Research Specialist to find information.',
       parameters: {
         type: 'object',
         properties: {
-          instruction: { type: 'string', description: 'The refined instruction for the Researcher Agent.' },
+          instruction: { type: 'string', description: 'The refined command for the Research Specialist.' },
         },
         required: ['instruction'],
       },
@@ -55,7 +55,7 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
   ];
 
   try {
-    // Initial call to check for tool usage (always non-streaming for intent detection)
+    // 1. Initial Orchestration Call
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: messages,
@@ -66,6 +66,7 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
 
     const assistantMessage = response.choices[0].message;
 
+    // 2. Check for Delegation
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
       const toolCall = assistantMessage.tool_calls[0];
       
@@ -73,18 +74,18 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
 
-        let output = "";
+        let report = "";
         let agentName = "";
         if (fn.name === 'delegateToScheduler') {
           agentName = "scheduler";
-          output = (await handleSchedulerRequest(args.instruction)) || "";
+          report = (await handleSchedulerRequest(args.instruction)) || "";
         } else if (fn.name === 'delegateToResearcher') {
           agentName = "researcher";
-          output = (await handleResearcherRequest(args.instruction)) || "";
+          report = (await handleResearcherRequest(args.instruction)) || "";
         }
 
-        // Second call for summarization (can be streamed)
-        const summaryMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        // 3. Final Synthesis (Address the User with the Report info)
+        const finalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
           ...messages,
           {
             role: assistantMessage.role,
@@ -94,7 +95,7 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
           {
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: output,
+            content: `Specialist Report: "${report}"`,
           },
         ];
 
@@ -102,7 +103,7 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
           return {
             stream: await poe.chat.completions.create({
               model: MODEL_NAME,
-              messages: summaryMessages,
+              messages: finalMessages,
               stream: true,
             }),
             agent: agentName
@@ -111,14 +112,14 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
 
         const secondResponse = await poe.chat.completions.create({
           model: MODEL_NAME,
-          messages: summaryMessages,
+          messages: finalMessages,
         });
 
         return { content: secondResponse.choices[0].message.content, agent: agentName };
       }
     }
 
-    // Standard chat response (non-tool)
+    // Standard conversational response
     if (stream) {
       return {
         stream: await poe.chat.completions.create({
