@@ -64,41 +64,43 @@ export async function handleSchedulerRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      const toolCall = assistantMessage.tool_calls[0];
       
-      const fn = toolCall.function;
-      const args = JSON.parse(fn.arguments);
-      
-      console.log(`[Scheduler Agent] Executing tool: ${fn.name}`);
+      if (toolCall.type === 'function') {
+        const fn = toolCall.function;
+        const args = JSON.parse(fn.arguments);
+        
+        console.log(`[Scheduler Agent] Executing tool: ${fn.name}`);
 
-      let result;
-      if (fn.name === 'listEvents') {
-        result = await listEvents();
-      } else if (fn.name === 'createEvent') {
-        result = await createEvent(args.summary, args.start, args.end, args.description);
-      } else if (fn.name === 'checkConflicts') {
-        result = await checkConflicts(args.start, args.end);
+        let result;
+        if (fn.name === 'listEvents') {
+          result = await listEvents();
+        } else if (fn.name === 'createEvent') {
+          result = await createEvent(args.summary, args.start, args.end, args.description);
+        } else if (fn.name === 'checkConflicts') {
+          result = await checkConflicts(args.start, args.end);
+        }
+
+        const secondResponse = await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: instruction },
+            {
+              role: assistantMessage.role,
+              content: assistantMessage.content || '',
+              tool_calls: assistantMessage.tool_calls,
+            },
+            {
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result),
+            },
+          ],
+        });
+
+        return secondResponse.choices[0].message.content;
       }
-
-      const secondResponse = await poe.chat.completions.create({
-        model: MODEL_NAME,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: instruction },
-          {
-            role: assistantMessage.role,
-            content: assistantMessage.content || '',
-            tool_calls: assistantMessage.tool_calls,
-          },
-          {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(result),
-          },
-        ],
-      });
-
-      return secondResponse.choices[0].message.content;
     }
 
     return assistantMessage.content;

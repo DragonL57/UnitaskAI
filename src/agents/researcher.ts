@@ -64,33 +64,35 @@ export async function handleResearcherRequest(instruction: string) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      const toolCall = assistantMessage.tool_calls[0];
       
-      const functionName = toolCall.function.name;
-      const functionArgs = JSON.parse(toolCall.function.arguments);
+      if (toolCall.type === 'function') {
+        const functionName = toolCall.function.name;
+        const functionArgs = JSON.parse(toolCall.function.arguments);
 
-      console.log(`[Researcher Agent] Executing ${functionName}...`);
+        console.log(`[Researcher Agent] Executing ${functionName}...`);
 
-      let toolResult;
-      if (functionName === 'search') {
-        toolResult = await _search(functionArgs.query);
-      } else if (functionName === 'readWebpage') {
-        toolResult = await _readWebpage(functionArgs.url);
+        let toolResult;
+        if (functionName === 'search') {
+          toolResult = await _search(functionArgs.query);
+        } else if (functionName === 'readWebpage') {
+          toolResult = await _readWebpage(functionArgs.url);
+        }
+
+        // 2. Manual Injection Summary Call (Robust Pattern)
+        const secondResponse = await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: [
+            { role: 'system', content: RESEARCHER_PROMPT },
+            {
+              role: 'user', 
+              content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
+            },
+          ],
+        });
+
+        return secondResponse.choices[0].message.content || "I found the information but couldn't summarize it.";
       }
-
-      // 2. Manual Injection Summary Call (Robust Pattern)
-      const secondResponse = await poe.chat.completions.create({
-        model: MODEL_NAME,
-        messages: [
-          { role: 'system', content: RESEARCHER_PROMPT },
-          {
-            role: 'user', 
-            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
-          },
-        ],
-      });
-
-      return secondResponse.choices[0].message.content || "I found the information but couldn't summarize it.";
     }
 
     return assistantMessage.content || "I'm not sure how to research that.";

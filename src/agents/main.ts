@@ -66,37 +66,38 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
     const assistantMessage = response.choices[0].message;
 
     if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall: OpenAI.Chat.Completions.ChatCompletionMessageToolCall = assistantMessage.tool_calls[0];
+      const toolCall = assistantMessage.tool_calls[0];
       
-      const fn = toolCall.function;
-      const args = JSON.parse(fn.arguments);
+      if (toolCall.type === 'function') {
+        const fn = toolCall.function;
+        const args = JSON.parse(fn.arguments);
 
-      let output = "";
-      if (fn.name === 'delegateToScheduler') {
-        output = await handleSchedulerRequest(args.instruction);
-      } else if (fn.name === 'delegateToResearcher') {
-        output = await handleResearcherRequest(args.instruction);
+        let output = "";
+        if (fn.name === 'delegateToScheduler') {
+          output = await handleSchedulerRequest(args.instruction);
+        } else if (fn.name === 'delegateToResearcher') {
+          output = await handleResearcherRequest(args.instruction);
+        }
+
+        const secondResponse = await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: [
+            ...messages,
+            {
+              role: assistantMessage.role,
+              content: assistantMessage.content || '',
+              tool_calls: assistantMessage.tool_calls,
+            },
+            {
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: output,
+            },
+          ],
+        });
+
+        return secondResponse.choices[0].message.content;
       }
-
-      // Final summarization step for Main Agent
-      const secondResponse = await poe.chat.completions.create({
-        model: MODEL_NAME,
-        messages: [
-          ...messages,
-          {
-            role: assistantMessage.role,
-            content: assistantMessage.content || '',
-            tool_calls: assistantMessage.tool_calls,
-          },
-          {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: output,
-          },
-        ],
-      });
-
-      return secondResponse.choices[0].message.content;
     }
 
     return assistantMessage.content;
