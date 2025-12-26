@@ -45,7 +45,7 @@ export async function handleResearcherRequest(instruction: string) {
     return "I received an empty instruction. Please provide a topic to research.";
   }
 
-  console.log('[Researcher Agent] Received instruction:', instruction);
+  console.log('[Researcher Agent] Processing instruction:', instruction);
 
   try {
     // 1. Tool Selection Call
@@ -67,7 +67,7 @@ export async function handleResearcherRequest(instruction: string) {
       const functionName = toolCall.function.name;
       const functionArgs = JSON.parse(toolCall.function.arguments);
 
-      console.log(`[Researcher Agent] Executing tool: ${functionName}`);
+      console.log(`[Researcher Agent] Executing ${functionName}...`);
 
       let toolResult;
       if (functionName === 'search') {
@@ -76,29 +76,19 @@ export async function handleResearcherRequest(instruction: string) {
         toolResult = await _readWebpage(functionArgs.url);
       }
 
-      // Log tool result for debugging
-      const toolResultStr = JSON.stringify(toolResult);
-      console.log(`[Researcher Agent] Tool Result Preview: ${toolResultStr.substring(0, 500)}...`);
-
       // 2. Manual Injection Summary Call (Robust Pattern)
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: [
           { role: 'system', content: RESEARCHER_PROMPT },
-          { 
+          {
             role: 'user', 
-            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${toolResultStr}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
+            content: `Instruction: ${instruction}\n\nI have successfully executed the tool "${functionName}" and found the following information:\n\n${JSON.stringify(toolResult)}\n\nNow, please provide a clear and helpful summary for the user based on these results.` 
           },
         ],
       });
 
-      // Log full response object
-      console.log('[Researcher Agent] Full LLM Response Object:', JSON.stringify(secondResponse, null, 2));
-
-      const finalContent = secondResponse.choices[0].message.content;
-      console.log(`[Researcher Agent] Final response length: ${finalContent?.length || 0}`);
-      
-      return finalContent || "I found the information but couldn't summarize it.";
+      return secondResponse.choices[0].message.content || "I found the information but couldn't summarize it.";
     }
 
     return assistantMessage.content || "I'm not sure how to research that.";
