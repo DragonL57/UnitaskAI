@@ -66,6 +66,8 @@ export async function handleResearcherRequest(instruction: string) {
       const functionName = toolCall.function.name;
       const functionArgs = JSON.parse(toolCall.function.arguments);
 
+      console.log(`[Researcher Agent] Calling tool: ${functionName}`);
+
       let toolResult;
       
       if (functionName === 'search') {
@@ -77,6 +79,8 @@ export async function handleResearcherRequest(instruction: string) {
       } else if (functionName === 'readWebpage') {
         toolResult = await _readWebpage(functionArgs.url);
       }
+
+      console.log(`[Researcher Agent] Tool result length: ${JSON.stringify(toolResult).length}`);
 
       const secondResponse = await poe.chat.completions.create({
         model: MODEL_NAME,
@@ -92,10 +96,13 @@ export async function handleResearcherRequest(instruction: string) {
         ],
       });
 
-      return secondResponse.choices[0].message.content;
+      const finalContent = secondResponse.choices[0].message.content;
+      console.log(`[Researcher Agent] Final response length: ${finalContent?.length || 0}`);
+      
+      return finalContent || "I found some information but couldn't summarize it.";
     }
 
-    return message.content;
+    return message.content || "I couldn't find a tool to help with that.";
 
   } catch (error) {
     console.error('Researcher Agent Error:', error);
