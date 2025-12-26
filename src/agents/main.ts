@@ -1,3 +1,4 @@
+import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { readMemory } from '@/agents/memory';
 import { handleSchedulerRequest } from '@/agents/scheduler';
@@ -47,7 +48,7 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
     .replace('{{memory}}', memoryContent || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
-  const messages: any[] = [
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     ...history,
     { role: 'user', content: userQuery }
@@ -57,7 +58,7 @@ export async function chat(userQuery: string, history: MessageContext[] = []) {
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
       messages: messages,
-      // @ts-ignore
+      // @ts-expect-error - OpenAI SDK types for tools are strict, but Poe accepts this structure
       tools: tools,
       tool_choice: 'auto',
     });

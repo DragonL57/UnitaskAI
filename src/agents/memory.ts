@@ -64,7 +64,7 @@ export async function saveMemory(content: string) {
     
     try {
       revalidatePath('/');
-    } catch (e) {
+    } catch {
       // Ignored
     }
   } catch (error) {
@@ -73,7 +73,7 @@ export async function saveMemory(content: string) {
   }
 }
 
-export async function evaluateAndStore(userQuery: string, history: MessageContext[] = []) {
+export async function evaluateAndStore(userQuery: string, _history: MessageContext[] = []) {
   try {
     const currentMemory = await readMemory(true); // Silent read for background task
     const systemPrompt = MEMORY_EVALUATOR_PROMPT.replace('{{currentMemory}}', currentMemory);

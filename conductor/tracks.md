@@ -54,5 +54,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Final Linting Cleanup
+## [~] Track: Final Linting Cleanup
 *Link: [./conductor/tracks/final_lint_cleanup_20251226/](./conductor/tracks/final_lint_cleanup_20251226/)*

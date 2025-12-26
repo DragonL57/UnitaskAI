@@ -55,7 +55,7 @@ export async function handleResearcherRequest(instruction: string) {
         { role: 'system', content: RESEARCHER_PROMPT },
         { role: 'user', content: instruction },
       ],
-      // @ts-ignore
+      // @ts-expect-error - OpenAI SDK types for tools are strict, but Poe accepts this structure
       tools: tools,
       tool_choice: 'auto', 
     });
