@@ -1,5 +1,5 @@
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { search, readWebpage } from '@/tools/tavily';
+import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 
 // Define tools for function calling
@@ -41,6 +41,12 @@ const tools = [
 ];
 
 export async function handleResearcherRequest(instruction: string) {
+  if (!instruction || !instruction.trim()) {
+    return "I received an empty instruction. Please provide a topic to research.";
+  }
+
+  console.log('[Researcher Agent] Received instruction:', instruction);
+
   try {
     const response = await poe.chat.completions.create({
       model: MODEL_NAME,
@@ -63,9 +69,13 @@ export async function handleResearcherRequest(instruction: string) {
       let toolResult;
       
       if (functionName === 'search') {
-        toolResult = await search(functionArgs.query);
+        if (!functionArgs.query) {
+            console.error('[Researcher Agent] Tool called with empty query.');
+            return "I couldn't formulate a search query.";
+        }
+        toolResult = await _search(functionArgs.query);
       } else if (functionName === 'readWebpage') {
-        toolResult = await readWebpage(functionArgs.url);
+        toolResult = await _readWebpage(functionArgs.url);
       }
 
       const secondResponse = await poe.chat.completions.create({

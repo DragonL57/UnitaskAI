@@ -4,6 +4,7 @@ import { readMemory } from '@/agents/memory';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getMemory(): Promise<string> {
-  noStore(); // Opt out of static caching for this Server Action
-  return await readMemory();
+  noStore();
+  // Pass true to silence the logs during polling
+  return await readMemory(true);
 }
