@@ -99,10 +99,10 @@ export async function evaluateAndStore(userQuery: string) {
     const systemPromptBase = MEMORY_EVALUATOR_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
     let rounds = 0;
-    const MAX_ROUNDS = 5;
+    const MAX_ROUNDS = 10;
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPromptBase.replace('{{currentMemory}}', workingMemory) },
-      { role: 'user', content: `Analyze this interaction: "${userQuery}"` }
+      { role: 'user', content: `LATEST INTERACTION TO ANALYZE: "${userQuery}"` }
     ];
 
     console.log('[Memory Agent] Starting Sleep-time Compute loop...');
@@ -119,7 +119,13 @@ export async function evaluateAndStore(userQuery: string) {
       const assistantMessage = response.choices[0].message;
       messages.push(assistantMessage);
 
+      // Log inner monologue if present
+      if (assistantMessage.content) {
+        console.log(`[Memory Agent] Round ${rounds} Reasoning: ${assistantMessage.content.slice(0, 100)}...`);
+      }
+
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        console.log(`[Memory Agent] No more tool calls. Ending loop.`);
         break;
       }
 
@@ -141,9 +147,10 @@ export async function evaluateAndStore(userQuery: string) {
           messages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: "Memory state updated. Continue rethinking or finish.",
+            content: "Memory state updated successfully. Continue your reasoning process or finish.",
           });
           
+          // Update the system prompt with the new working memory state for the next round
           messages[0] = { 
             role: 'system', 
             content: systemPromptBase.replace('{{currentMemory}}', workingMemory) 
@@ -152,6 +159,7 @@ export async function evaluateAndStore(userQuery: string) {
       }
     }
 
+    // Fallback save if loop ends without finish_rethinking
     await saveMemory(workingMemory);
 
   } catch (error) {
