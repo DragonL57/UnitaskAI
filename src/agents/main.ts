@@ -35,20 +35,6 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
       },
     },
   },
-  {
-    type: 'function',
-    function: {
-      name: 'respondToUser',
-      description: 'Send the final response or a follow-up question to the user.',
-      parameters: {
-        type: 'object',
-        properties: {
-          message: { type: 'string', description: 'The text message to send to the user.' },
-        },
-        required: ['message'],
-      },
-    },
-  },
 ];
 
 export interface MessageContext {
@@ -106,16 +92,19 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
       });
 
       const assistantMessage = response.choices[0].message;
-      internalMessages.push(assistantMessage);
-
-      // Yield any "Inner Monologue" as a thought
-      if (assistantMessage.content) {
-        yield { type: 'thought', text: assistantMessage.content };
-      }
-
+      
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-        // If the agent didn't use a tool, it failed to follow the protocol
-        yield { type: 'chunk', text: "I'm having trouble formulating a response. Could you try again?" };
+        // Stream the final response using proper OpenAI SDK types
+        const stream = await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: internalMessages,
+          stream: true,
+        });
+
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) yield { type: 'chunk', text: content };
+        }
         return;
       }
 
@@ -124,10 +113,8 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
 
-        if (fn.name === 'respondToUser') {
-          // Final response to the user
-          yield { type: 'chunk', text: args.message };
-          return;
+        if (assistantMessage.content) {
+          yield { type: 'thought', text: assistantMessage.content };
         }
         
         let agentName = "";
@@ -147,6 +134,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         yield { type: 'report', text: report };
         yield { type: 'agent', name: 'main' }; 
 
+        internalMessages.push(assistantMessage);
         internalMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id,

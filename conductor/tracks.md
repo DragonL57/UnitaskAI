@@ -94,11 +94,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [x] Track: Implement Agentic User Response Tool
-*Link: [./conductor/tracks/agentic_user_response_20251227/](./conductor/tracks/agentic_user_response_20251227/)*
-
----
-
 ## [x] Track: Add Stop Generation Button
 *Link: [./conductor/tracks/stop_generation_button_20251227/](./conductor/tracks/stop_generation_button_20251227/)*
 
