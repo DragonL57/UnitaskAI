@@ -94,5 +94,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
+## [x] Track: Add Stop Generation Button
+*Link: [./conductor/tracks/stop_generation_button_20251227/](./conductor/tracks/stop_generation_button_20251227/)*
+
+---
+
 ## [x] Track: Implement Sleep-time Compute for Memory Agent
 *Link: [./conductor/tracks/sleep_time_memory_20251227/](./conductor/tracks/sleep_time_memory_20251227/)*
