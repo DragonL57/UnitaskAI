@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Zap, ChevronUp, ChevronDown, Search, FileText } from 'lucide-react';
+import { Send, Zap, ChevronUp, ChevronDown, Search, FileText, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -28,6 +28,7 @@ export default function Chat() {
   const [isReceivingContent, setIsReceivingContent] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -35,8 +36,20 @@ export default function Chat() {
     }
   }, [messages, isLoading]);
 
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+      setIsReceivingContent(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -57,7 +70,8 @@ export default function Chat() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history })
+        body: JSON.stringify({ message: input, history }),
+        signal: controller.signal
       });
 
       if (!response.ok) throw new Error('Failed to fetch from API');
@@ -106,13 +120,18 @@ export default function Chat() {
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => prev.map(m => 
-        m.id === assistantMessageId ? { ...m, content: 'Sorry, I encountered an error. Please try again.' } : m
-      ));
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Fetch aborted');
+      } else {
+        console.error('Error sending message:', error);
+        setMessages(prev => prev.map(m => 
+          m.id === assistantMessageId ? { ...m, content: 'Sorry, I encountered an error. Please try again.' } : m
+        ));
+      }
     } finally {
       setIsLoading(false);
       setIsReceivingContent(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -205,13 +224,22 @@ export default function Chat() {
               }}
             />
           </div>
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className="mb-1 w-12 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
-          >
-            <Send className="w-5 h-5 ml-0.5" />
-          </button>
+          {isLoading ? (
+            <button
+              onClick={handleStop}
+              className="mb-1 w-12 h-12 bg-gray-800 hover:bg-gray-900 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
+            >
+              <Square className="w-5 h-5 fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className="mb-1 w-12 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
+            >
+              <Send className="w-5 h-5 ml-0.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
