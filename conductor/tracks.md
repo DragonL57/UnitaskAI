@@ -94,6 +94,11 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
+## [x] Track: Transparency: Agent Intent Announcement
+*Link: [./conductor/tracks/ui_transparency_intent_20251227/](./conductor/tracks/ui_transparency_intent_20251227/)*
+
+---
+
 ## [x] Track: Add Stop Generation Button
 *Link: [./conductor/tracks/stop_generation_button_20251227/](./conductor/tracks/stop_generation_button_20251227/)*
 
