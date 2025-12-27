@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { poe, MODEL_NAME } from '@/lib/poe';
+import { poe, REASONING_MODEL_NAME } from '@/lib/poe';
 import { readMemory, evaluateAndStore } from '@/agents/memory';
 import { incrementStepCounter, shouldRunSleepTimeAgent } from './memoryAgentState';
 import { handleSchedulerRequest } from '@/agents/scheduler';
@@ -86,7 +86,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
       currentRound++;
       
       const response = await poe.chat.completions.create({
-        model: MODEL_NAME,
+        model: REASONING_MODEL_NAME,
         messages: internalMessages,
         tools: tools,
         tool_choice: 'auto',
@@ -97,7 +97,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
         // Stream the final response using proper OpenAI SDK types
         const stream = await poe.chat.completions.create({
-          model: MODEL_NAME,
+          model: REASONING_MODEL_NAME,
           messages: internalMessages,
           stream: true,
         });

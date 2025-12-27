@@ -14,3 +14,4 @@ export const poe = new OpenAI({
 });
 
 export const MODEL_NAME = 'grok-4.1-fast-non-reasoning';
+export const REASONING_MODEL_NAME = 'grok-4.1-fast-reasoning';
