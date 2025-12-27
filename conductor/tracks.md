@@ -84,5 +84,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Sub-Agent Iterative Tool Calling
+## [~] Track: Sub-Agent Iterative Tool Calling
 *Link: [./conductor/tracks/subagent_iterative_tools_20251226/](./conductor/tracks/subagent_iterative_tools_20251226/)*

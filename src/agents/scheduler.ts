@@ -92,69 +92,61 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-/**
- * Scheduler Agent
- * Full CRUD capabilities for Google Calendar.
- */
 export async function handleSchedulerRequest(instruction: string): Promise<string> {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
+  let internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: instruction },
+  ];
+
+  let rounds = 0;
+  const MAX_ROUNDS = 5;
 
   try {
-    const response = await poe.chat.completions.create({
-      model: MODEL_NAME,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: instruction },
-      ],
-      tools: tools,
-      tool_choice: 'auto',
-    });
+    while (rounds < MAX_ROUNDS) {
+      rounds++;
+      const response = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: internalMessages,
+        tools: tools,
+        tool_choice: 'auto',
+      });
 
-    const assistantMessage = response.choices[0].message;
+      const assistantMessage = response.choices[0].message;
+      internalMessages.push(assistantMessage);
 
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
-      
-      if (toolCall.type === 'function') {
-        const fn = toolCall.function;
-        const args = JSON.parse(fn.arguments);
-        
-        console.log(`[Scheduler Specialist] Executing tool: ${fn.name}`);
-
-        let result;
-        if (fn.name === 'listEvents') {
-          result = await listEvents();
-        } else if (fn.name === 'searchEvents') {
-          result = await searchEvents(args.query);
-        } else if (fn.name === 'createEvent') {
-          result = await createEvent(args.summary, args.start, args.end, args.description);
-        } else if (fn.name === 'updateEvent') {
-          result = await updateEvent(args.eventId, args.summary, args.start, args.end, args.description);
-        } else if (fn.name === 'deleteEvent') {
-          result = await deleteEvent(args.eventId);
-        } else if (fn.name === 'checkConflicts') {
-          result = await checkConflicts(args.start, args.end);
-        }
-
-        const secondResponse = await poe.chat.completions.create({
-          model: MODEL_NAME,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            {
-              role: 'user', 
-              content: `Instruction from Main Agent: "${instruction}"\n\nTool Execution Result: ${JSON.stringify(result)}\n\nPlease provide a clear report for the Main Agent summarizing what was done or found.` 
-            },
-          ],
-        });
-
-        return secondResponse.choices[0].message.content || "Action completed, but no report generated.";
+      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        // Specialist has finished and is providing the report
+        return assistantMessage.content || "Task completed.";
       }
+
+      // Execute tool calls and add results to context
+      for (const toolCall of assistantMessage.tool_calls) {
+        if (toolCall.type === 'function') {
+          const fn = toolCall.function;
+          const args = JSON.parse(fn.arguments);
+          console.log(`[Scheduler Specialist] Round ${rounds}: Executing ${fn.name}...`);
+
+          let result;
+          if (fn.name === 'listEvents') result = await listEvents();
+          else if (fn.name === 'searchEvents') result = await searchEvents(args.query);
+          else if (fn.name === 'createEvent') result = await createEvent(args.summary, args.start, args.end, args.description);
+          else if (fn.name === 'updateEvent') result = await updateEvent(args.eventId, args.summary, args.start, args.end, args.description);
+          else if (fn.name === 'deleteEvent') result = await deleteEvent(args.eventId);
+          else if (fn.name === 'checkConflicts') result = await checkConflicts(args.start, args.end);
+
+          internalMessages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(result),
+          });
+        }
+      }
+      // Loop continues to let specialist analyze results...
     }
-
-    return assistantMessage.content || "No actions taken by Scheduler.";
-
+    return "I reached my tool limit for this calendar task.";
   } catch (error) {
     console.error('Scheduler Specialist Error:', error);
-    return `Report: Failed to process calendar task.`;
+    return `Report: Error during calendar management.`;
   }
 }

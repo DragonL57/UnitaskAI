@@ -34,68 +34,61 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-/**
- * Researcher Agent
- * Refines tool data into a plain-language report for the Main Agent.
- */
 export async function handleResearcherRequest(instruction: string): Promise<string> {
   if (!instruction || !instruction.trim()) {
     return "Empty instruction provided.";
   }
 
-  console.log('[Researcher Specialist] Received instruction:', instruction);
-
   const systemPrompt = RESEARCHER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
+  let internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: instruction },
+  ];
+
+  let rounds = 0;
+  const MAX_ROUNDS = 5;
 
   try {
-    const response = await poe.chat.completions.create({
-      model: MODEL_NAME,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: instruction },
-      ],
-      tools: tools,
-      tool_choice: 'auto', 
-    });
+    while (rounds < MAX_ROUNDS) {
+      rounds++;
+      const response = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: internalMessages,
+        tools: tools,
+        tool_choice: 'auto', 
+      });
 
-    const assistantMessage = response.choices[0].message;
+      const assistantMessage = response.choices[0].message;
+      internalMessages.push(assistantMessage);
 
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
-      
-      if (toolCall.type === 'function') {
-        const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        return assistantMessage.content || "Task completed.";
+      }
 
-        console.log(`[Researcher Specialist] Executing tool: ${functionName}`);
+      for (const toolCall of assistantMessage.tool_calls) {
+        if (toolCall.type === 'function') {
+          const functionName = toolCall.function.name;
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          console.log(`[Researcher Specialist] Round ${rounds}: Executing ${functionName}...`);
 
-        let toolResult;
-        if (functionName === 'search') {
-          toolResult = await _search(functionArgs.query);
-        } else if (functionName === 'readWebpage') {
-          toolResult = await _readWebpage(functionArgs.url);
+          let toolResult;
+          if (functionName === 'search') {
+            toolResult = await _search(functionArgs.query);
+          } else if (functionName === 'readWebpage') {
+            toolResult = await _readWebpage(functionArgs.url);
+          }
+
+          internalMessages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: JSON.stringify(toolResult),
+          });
         }
-
-        // Internal report call (Address the Main Agent)
-        const secondResponse = await poe.chat.completions.create({
-          model: MODEL_NAME,
-          messages: [
-            { role: 'system', content: RESEARCHER_PROMPT },
-            {
-              role: 'user', 
-              content: `Instruction from Main Agent: "${instruction}"\n\nSearch/Reading Results: ${JSON.stringify(toolResult)}\n\nPlease provide a clear, comprehensive report for the Main Agent summarizing the findings.` 
-            },
-          ],
-        });
-
-        return secondResponse.choices[0].message.content || "I have gathered data but couldn't generate a report.";
       }
     }
-
-    return assistantMessage.content || "No findings from the Research Specialist.";
-
+    return "I reached my tool limit for this research task.";
   } catch (error) {
     console.error('Researcher Specialist Error:', error);
-    return "Report: Failed to complete research task due to an error.";
+    return "Report: Failed to complete research task.";
   }
 }
