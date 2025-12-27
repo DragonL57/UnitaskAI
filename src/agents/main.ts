@@ -43,13 +43,23 @@ export interface MessageContext {
   tool_calls?: any[];
 }
 
-export async function chat(userQuery: string, history: MessageContext[] = [], stream = false) {
+export type ChatEvent = 
+  | { type: 'agent', name: string }
+  | { type: 'thought', text: string }
+  | { type: 'action', text: string }
+  | { type: 'report', text: string }
+  | { type: 'chunk', text: string };
+
+/**
+ * Chat Orchestrator (Async Generator)
+ * Yields orchestration events during the reasoning loop.
+ */
+export async function* chat(userQuery: string, history: MessageContext[] = []): AsyncGenerator<ChatEvent> {
   const memoryContent = await readMemory(true);
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryContent || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
-  // Base messages for the entire session
   const baseMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     ...history.map(m => ({ role: m.role, content: m.content } as OpenAI.Chat.Completions.ChatCompletionMessageParam)),
@@ -61,11 +71,12 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
   const MAX_ROUNDS = 5;
   let lastAgentUsed = 'main';
 
+  yield { type: 'agent', name: 'main' };
+
   try {
     while (currentRound < MAX_ROUNDS) {
       currentRound++;
-      console.log(`[Main Agent] Orchestration Round ${currentRound}...`);
-
+      
       const response = await poe.chat.completions.create({
         model: MODEL_NAME,
         messages: internalMessages,
@@ -75,20 +86,21 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
 
       const assistantMessage = response.choices[0].message;
       
-      // 1. If NO tool calls, this is the FINAL response
+      // 1. Final Synthesis
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-        if (stream) {
-          // Stream the final thought
-          return {
-            stream: await poe.chat.completions.create({
-              model: MODEL_NAME,
-              messages: internalMessages,
-              stream: true,
-            }),
-            agent: lastAgentUsed as any
-          };
+        // Stream the final response
+        const stream = await poe.chat.completions.create({
+          model: MODEL_NAME,
+          messages: internalMessages,
+          stream: true,
+        });
+
+        // @ts-expect-error - OpenAI SDK stream types
+        for await (const chunk of stream) {
+          const content = chunk.choices[0]?.delta?.content || '';
+          if (content) yield { type: 'chunk', text: content };
         }
-        return { content: assistantMessage.content, agent: lastAgentUsed as any };
+        return;
       }
 
       // 2. Handle Tool Calls
@@ -97,36 +109,46 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
 
-        let report = "";
+        // Yield thought and action
+        if (assistantMessage.content) {
+          yield { type: 'thought', text: assistantMessage.content };
+        }
+        
         let agentName = "";
+        let actionDesc = "";
         if (fn.name === 'delegateToScheduler') {
           agentName = "scheduler";
-          report = (await handleSchedulerRequest(args.instruction)) || "";
+          actionDesc = `Requesting Scheduler: "${args.instruction}"`;
         } else if (fn.name === 'delegateToResearcher') {
           agentName = "researcher";
-          report = (await handleResearcherRequest(args.instruction)) || "";
+          actionDesc = `Requesting Researcher: "${args.instruction}"`;
         }
 
-        lastAgentUsed = agentName;
+        yield { type: 'agent', name: agentName };
+        yield { type: 'action', text: actionDesc };
 
-        // Push the assistant's request and the specialist's report to context
+        const report = (await (fn.name === 'delegateToScheduler' 
+          ? handleSchedulerRequest(args.instruction) 
+          : handleResearcherRequest(args.instruction))) || "";
+
+        yield { type: 'report', text: report };
+        yield { type: 'agent', name: 'main' }; // Switch back to main for next reasoning
+
         internalMessages.push(assistantMessage);
         internalMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id,
           content: `Specialist Report from ${agentName}: "${report}"`,
         });
-        
-        // Loop continues...
       } else {
         break;
       }
     }
 
-    return { content: "I've reached my limit for this task. Could you be more specific?", agent: 'main' as const };
+    yield { type: 'chunk', text: "I've reached my limit for this task. Could you be more specific?" };
 
   } catch (error) {
     console.error('Main Agent Orchestration Error:', error);
-    throw error;
+    yield { type: 'chunk', text: "I'm sorry, I encountered an error while processing your request." };
   }
 }

@@ -1,15 +1,21 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send } from 'lucide-react';
+import { Send, User, Bot, ChevronDown, ChevronUp, Zap, Search, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+interface OrchestrationStep {
+  type: 'thought' | 'action' | 'report';
+  text: string;
+}
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   agent?: 'scheduler' | 'researcher' | 'memory' | 'main';
+  steps?: OrchestrationStep[];
 }
 
 export default function Chat() {
@@ -36,7 +42,7 @@ export default function Chat() {
     setIsLoading(true);
 
     const assistantMessageId = (Date.now() + 1).toString();
-    const assistantMessage: Message = { id: assistantMessageId, role: 'assistant', content: '', agent: 'main' };
+    const assistantMessage: Message = { id: assistantMessageId, role: 'assistant', content: '', agent: 'main', steps: [] };
     setMessages(prev => [...prev, assistantMessage]);
 
     try {
@@ -65,25 +71,32 @@ export default function Chat() {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
         if (value) {
-          let chunkValue = decoder.decode(value, { stream: !done });
-          
-          if (!hasParsedMetadata && chunkValue.includes('__AGENT__:')) {
-            const lines = chunkValue.split('\n');
-            const metadataLine = lines.find(l => l.startsWith('__AGENT__:'));
-            
-            if (metadataLine) {
-              const agentName = metadataLine.split(':')[1].trim() as Message['agent'];
-              setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, agent: agentName } : m));
-              hasParsedMetadata = true;
-              chunkValue = lines.filter(l => l !== metadataLine).join('\n');
-            }
-          }
+          const rawChunk = decoder.decode(value, { stream: !done });
+          const lines = rawChunk.split('\n');
 
-          if (chunkValue) {
-            fullContent += chunkValue;
-            setMessages(prev => prev.map(m => 
-              m.id === assistantMessageId ? { ...m, content: fullContent } : m
-            ));
+          for (const line of lines) {
+            if (line.startsWith('__EVENT__:')) {
+              try {
+                const event = JSON.parse(line.replace('__EVENT__:', ''));
+                
+                if (event.type === 'agent') {
+                  setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, agent: event.name } : m));
+                } else if (event.type === 'thought' || event.type === 'action' || event.type === 'report') {
+                  setMessages(prev => prev.map(m => 
+                    m.id === assistantMessageId 
+                      ? { ...m, steps: [...(m.steps || []), { type: event.type, text: event.text }] } 
+                      : m
+                  ));
+                } else if (event.type === 'chunk') {
+                  fullContent += event.text;
+                  setMessages(prev => prev.map(m => 
+                    m.id === assistantMessageId ? { ...m, content: fullContent } : m
+                  ));
+                }
+              } catch (e) {
+                // Ignore incomplete JSON chunks
+              }
+            }
           }
         }
       }
@@ -105,11 +118,16 @@ export default function Chat() {
         <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-10" ref={scrollRef}>
           {messages.map((m) => (
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-              <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[85%]">
-                <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${ 
-                  m.role === 'user' 
-                    ? 'bg-indigo-600 text-white rounded-tr-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-tl-none'
+              <div className="flex flex-col gap-3 max-w-[95%] sm:max-w-[85%]">
+                
+                {/* Steps Log */}
+                {m.steps && m.steps.length > 0 && (
+                  <ActionLog steps={m.steps} />
+                )}
+
+                <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${m.role === 'user' 
+                    ? 'bg-indigo-600 text-white rounded-tr-none'
+                    : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
                 }`}>
                   {m.role === 'assistant' && !m.content && isLoading ? (
                     <div className="flex gap-1.5 py-2">
@@ -137,6 +155,7 @@ export default function Chat() {
               </div>
             </div>
           ))}
+          <div className="h-32 md:h-40 shrink-0" />
         </div>
       </div>
 
@@ -173,6 +192,43 @@ export default function Chat() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ActionLog({ steps }: { steps: OrchestrationStep[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="ml-2 mb-1">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-indigo-500 transition-colors"
+      >
+        <Zap className="w-3 h-3" />
+        <span>{steps.length} Steps Taken</span>
+        {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+      
+      {isOpen && (
+        <div className="mt-3 space-y-3 pl-4 border-l-2 border-indigo-100 animate-in slide-in-from-top-2 duration-300">
+          {steps.map((step, i) => (
+            <div key={i} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                {step.type === 'thought' && <Zap className="w-3 h-3 text-amber-400" />}
+                {step.type === 'action' && <Search className="w-3 h-3 text-blue-400" />}
+                {step.type === 'report' && <FileText className="w-3 h-3 text-green-400" />}
+                <span className="text-[9px] font-bold uppercase text-gray-400">{step.type}</span>
+              </div>
+              <div className="text-xs text-gray-600 leading-normal pl-5 pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {step.text}
+                </ReactMarkdown>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

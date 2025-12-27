@@ -1,42 +1,33 @@
-import { chat } from '@/agents/main';
+import { chat, ChatEvent } from '@/agents/main';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
     const { message, history } = await req.json();
 
-    const result = await chat(message, history, true);
+    const eventGenerator = chat(message, history);
 
-    if ('stream' in result) {
-      // Create a custom ReadableStream to pipe the OpenAI stream to the client
-      const stream = new ReadableStream({
-        async start(controller) {
-          // Send agent info first as a special chunk
-          controller.enqueue(new TextEncoder().encode(`__AGENT__:${result.agent}\n`));
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
 
-          try {
-            // @ts-expect-error - OpenAI SDK stream types vary between versions, Poe's stream is compatible with for-await
-            for await (const chunk of result.stream) {
-              const content = chunk.choices[0]?.delta?.content || '';
-              if (content) {
-                controller.enqueue(new TextEncoder().encode(content));
-              }
-            }
-          } catch (e) {
-            console.error('Streaming error:', e);
-          } finally {
-            controller.close();
+        try {
+          for await (const event of eventGenerator) {
+            // Encode the event as a special JSON-prefixed line
+            controller.enqueue(encoder.encode(`__EVENT__:${JSON.stringify(event)}
+`));
           }
-        },
-      });
+        } catch (e) {
+          console.error('API Streaming error:', e);
+        } finally {
+          controller.close();
+        }
+      },
+    });
 
-      return new Response(stream, {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      });
-    }
-
-    // Fallback if not streamed (though we requested it)
-    return Response.json(result);
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
 
   } catch (error) {
     console.error('API Chat Error:', error);
