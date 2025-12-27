@@ -41,7 +41,7 @@ export interface MessageContext {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   tool_call_id?: string;
-  tool_calls?: any[];
+  tool_calls?: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[];
 }
 
 export type ChatEvent = 
@@ -69,10 +69,9 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
     { role: 'user', content: userQuery }
   ];
 
-  let internalMessages = [...baseMessages];
+  const internalMessages = [...baseMessages];
   let currentRound = 0;
   const MAX_ROUNDS = 5;
-  let lastAgentUsed = 'main';
 
   yield { type: 'agent', name: 'main' };
 
@@ -134,8 +133,6 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
 
         yield { type: 'report', text: report };
         yield { type: 'agent', name: 'main' }; 
-
-        lastAgentUsed = agentName;
 
         internalMessages.push(assistantMessage);
         internalMessages.push({

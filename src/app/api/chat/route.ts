@@ -1,4 +1,4 @@
-import { chat, ChatEvent } from '@/agents/main';
+import { chat } from '@/agents/main';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {

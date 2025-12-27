@@ -40,7 +40,7 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
   }
 
   const systemPrompt = RESEARCHER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
-  let internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+  const internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: instruction },
   ];

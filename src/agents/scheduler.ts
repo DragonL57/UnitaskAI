@@ -94,7 +94,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 
 export async function handleSchedulerRequest(instruction: string): Promise<string> {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
-  let internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+  const internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: instruction },
   ];

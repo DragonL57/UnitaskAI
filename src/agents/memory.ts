@@ -1,4 +1,4 @@
-import { put, list, del } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { MEMORY_EVALUATOR_PROMPT } from '@/prompts/memory';
 import { revalidatePath } from 'next/cache';

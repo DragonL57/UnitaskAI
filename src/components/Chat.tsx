@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot, ChevronDown, ChevronUp, Zap, Search, FileText } from 'lucide-react';
+import { Send, Zap, ChevronUp, ChevronDown, Search, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -97,7 +97,7 @@ export default function Chat() {
                     m.id === assistantMessageId ? { ...m, content: fullContent } : m
                   ));
                 }
-              } catch (e) {
+              } catch {
                 // Ignore incomplete JSON chunks
               }
             }
