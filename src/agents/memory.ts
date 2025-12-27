@@ -1,8 +1,8 @@
 import { put, list, del } from '@vercel/blob';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { MEMORY_EVALUATOR_PROMPT } from '@/prompts/memory';
-import { MessageContext } from '@/agents/main';
 import { revalidatePath } from 'next/cache';
+import OpenAI from 'openai';
 
 const MEMORY_FILE_NAME = 'memory.md';
 const INITIAL_TEMPLATE = `# User Memory
@@ -10,11 +10,42 @@ const INITIAL_TEMPLATE = `# User Memory
 ## User Profile
 - **Name:** Unknown
 
-## Facts
-- (None)`;
+## Preferences
+- None
+
+## Insights & Hypotheses
+- None
+
+## Key Facts
+- None`;
+
+const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'rethink_memory',
+      description: 'Re-evaluate and update the memory content with new insights or consolidated facts.',
+      parameters: {
+        type: 'object',
+        properties: {
+          new_content: { type: 'string', description: 'The entire updated Markdown content of the memory file.' },
+        },
+        required: ['new_content'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'finish_rethinking',
+      description: 'Call this when you have finished consolidating and re-organizing the memories.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+];
 
 export async function readMemory(silent = false): Promise<string> {
-  if (!silent) console.log('[Memory Agent] Attempting to read memory from Blob...');
+  if (!silent) console.log('[Memory Agent] Reading from Blob...');
   try {
     const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
     const memoryBlob = blobs
@@ -22,37 +53,24 @@ export async function readMemory(silent = false): Promise<string> {
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
 
     if (!memoryBlob) {
-      console.log('[Memory Agent] No existing memory blob found. Initializing with template...');
-      await saveMemory(INITIAL_TEMPLATE);
       return INITIAL_TEMPLATE;
     }
 
-    if (!silent) console.log(`[Memory Agent] Found memory blob at: ${memoryBlob.url}`);
-    
-    // Add timestamp to bypass CDN cache
     const cacheBuster = `?t=${Date.now()}`;
     const response = await fetch(memoryBlob.url + cacheBuster, { cache: 'no-store' });
-    
-    if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
-    
-    const content = await response.text();
-    if (!silent) console.log(`[Memory Agent] Successfully read ${content.length} characters.`);
-    return content;
+    if (!response.ok) throw new Error('Fetch failed');
+    return await response.text();
   } catch (error) {
-    console.error('[Memory Agent] Error reading memory from Blob:', error);
+    console.error('[Memory Agent] Read error:', error);
     return INITIAL_TEMPLATE;
   }
 }
 
 export async function saveMemory(content: string) {
-  console.log('[Memory Agent] Attempting to save memory to Blob...');
   try {
-    // Delete old blobs to ensure clean state
     const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
     const existing = blobs.filter(b => b.pathname === MEMORY_FILE_NAME);
-    
     if (existing.length > 0) {
-      // console.log(`[Memory Agent] Deleting ${existing.length} old blob(s)...`); // Reduce noise
       await del(existing.map(b => b.url));
     }
 
@@ -60,45 +78,25 @@ export async function saveMemory(content: string) {
       access: 'public',
       addRandomSuffix: false,
     });
-    console.log(`[Memory Agent] Memory successfully saved! URL: ${blob.url}`);
+    console.log(`[Memory Agent] Consolidated memory saved: ${blob.url}`);
     
-    try {
-      revalidatePath('/');
-    } catch {
-      // Ignored
-    }
+    try { revalidatePath('/'); } catch {}
   } catch (error) {
-    console.error('[Memory Agent] Error saving memory to Blob:', error);
-    throw error;
+    console.error('[Memory Agent] Save error:', error);
   }
 }
 
+/**
+ * Sleep-time Compute Loop
+ * Iteratively refines user memory based on recent interaction.
+ */
 export async function evaluateAndStore(userQuery: string) {
   try {
-    const currentMemory = await readMemory(true); // Silent read for background task
-    const systemPrompt = MEMORY_EVALUATOR_PROMPT
-      .replace('{{currentMemory}}', currentMemory)
-      .replace('{{currentTime}}', new Date().toISOString());
-    
-    console.log('[Memory Agent] Evaluating message for new facts...');
-    const response = await poe.chat.completions.create({
-      model: MODEL_NAME,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `User Message: "${userQuery}"` }
-      ],
-    });
+    let workingMemory = await readMemory(true); // Silent read for background task
+    const systemPromptBase = MEMORY_EVALUATOR_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
-    const output = response.choices[0].message.content || 'NO_UPDATE';
-
-    if (output.trim() !== 'NO_UPDATE' && output.includes('# User Memory')) {
-      console.log('[Memory Agent] Fact detected! Updating memory...');
-      await saveMemory(output);
-    } else {
-      console.log('[Memory Agent] No update. LLM Output:', output.substring(0, 50));
-    }
-
-  } catch (error) {
-    console.error('[Memory Agent] Background evaluation failed:', error);
-  }
-}
+    let rounds = 0;
+    const MAX_ROUNDS = 5; // Allow up to 5 rounds of rethinking
+    let messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPromptBase.replace('{{currentMemory}}', workingMemory) },
+      { role: 'user', content: `Analyze this interaction: "${userQuery}"
