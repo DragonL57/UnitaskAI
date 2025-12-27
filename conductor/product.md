@@ -19,7 +19,7 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Multi-Agent Architecture:** A specialized system featuring dedicated agents (e.g., Scheduler Agent, Researcher Agent, and a Main Companion Agent) for optimized task execution.
 - **Google Calendar Integration:** Full capability to read existing events, schedule new appointments, and provide timely reminders.
 - **Tavily Integration:** Utilization of Tavily for high-performance web search and webpage content extraction, ensuring accurate and relevant information retrieval.
-- **Persistent Memory System:** Use of advanced storage (like a vector database or structured data) to ensure the companion remembers user preferences and past interactions.
+- **Deep Reasoning Memory:** A persistent memory system where a dedicated agent performs "Sleep-time Compute" to consolidate facts and infer user habits over time.
 
 ## Project Status
 - **Core Implementation Complete:** The foundational multi-agent orchestration, Google Calendar integration, Tavily search, and persistent memory system are fully implemented and verified.
@@ -29,3 +29,4 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Explicit Delegation:** The Main Agent now uses a manager-worker pattern, generating clear, specific instructions for specialized agents rather than passing raw queries.
 - **Researcher Performance:** The Researcher Agent now consistently delivers summaries for up to 10 search results using a robust manual injection architecture.
 - **Advanced Scheduling:** The assistant can now search, update, and delete Google Calendar events, enabling full lifecycle management of the user's schedule.
+- **Sleep-time Compute:** The Memory Agent now operates as a reasoning worker, performing iterative, offline consolidation to refine its understanding of the user.

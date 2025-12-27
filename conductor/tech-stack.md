@@ -24,6 +24,7 @@ This document outlines the core technologies and architectural choices for the m
 
 ## Memory System
 - **Agent-Managed File Storage:** A unique approach where a dedicated, silent "Memory Agent" maintains a persistent text-based or structured file.
+- **Sleep-time Compute:** The Memory Agent uses an iterative reasoning loop (up to 10 rounds) to perform "offline" memory consolidation, pattern recognition, and hypothesis generation.
 - **CRUD Memory Management:** The Memory Agent is responsible for reading, writing, updating, and deleting information from this central file based on conversation context.
 
 ## Deployment
