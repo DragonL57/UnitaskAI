@@ -114,7 +114,8 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         const args = JSON.parse(fn.arguments);
 
         if (assistantMessage.content) {
-          yield { type: 'thought', text: assistantMessage.content };
+          // Announce intent to the user in the main chat bubble
+          yield { type: 'chunk', text: assistantMessage.content + "\n\n" };
         }
         
         let agentName = "";
