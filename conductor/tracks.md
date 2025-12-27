@@ -79,5 +79,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Iterative Multi-Agent Orchestration
+## [x] Track: Iterative Multi-Agent Orchestration
 *Link: [./conductor/tracks/iterative_orchestration_20251226/](./conductor/tracks/iterative_orchestration_20251226/)*
+
+---
+
+## [ ] Track: Sub-Agent Iterative Tool Calling
+*Link: [./conductor/tracks/subagent_iterative_tools_20251226/](./conductor/tracks/subagent_iterative_tools_20251226/)*
