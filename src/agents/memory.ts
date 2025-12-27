@@ -92,11 +92,66 @@ export async function saveMemory(content: string) {
  */
 export async function evaluateAndStore(userQuery: string) {
   try {
-    let workingMemory = await readMemory(true); // Silent read for background task
+    let workingMemory = await readMemory(true);
     const systemPromptBase = MEMORY_EVALUATOR_PROMPT.replace('{{currentTime}}', new Date().toISOString());
 
     let rounds = 0;
-    const MAX_ROUNDS = 5; // Allow up to 5 rounds of rethinking
-    let messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    const MAX_ROUNDS = 5;
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPromptBase.replace('{{currentMemory}}', workingMemory) },
-      { role: 'user', content: `Analyze this interaction: "${userQuery}"
+      { role: 'user', content: `Analyze this interaction: "${userQuery}"` }
+    ];
+
+    console.log('[Memory Agent] Starting Sleep-time Compute loop...');
+
+    while (rounds < MAX_ROUNDS) {
+      rounds++;
+      const response = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: messages,
+        tools: tools,
+        tool_choice: 'auto',
+      });
+
+      const assistantMessage = response.choices[0].message;
+      messages.push(assistantMessage);
+
+      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        break;
+      }
+
+      const toolCall = assistantMessage.tool_calls[0];
+      if (toolCall.type === 'function') {
+        const fn = toolCall.function;
+        const args = JSON.parse(fn.arguments);
+
+        if (fn.name === 'finish_rethinking') {
+          console.log(`[Memory Agent] Rethinking complete after ${rounds} rounds.`);
+          await saveMemory(workingMemory);
+          return;
+        }
+
+        if (fn.name === 'rethink_memory') {
+          workingMemory = args.new_content;
+          console.log(`[Memory Agent] Round ${rounds}: Memory updated/reorganized.`);
+          
+          messages.push({
+            role: 'tool',
+            tool_call_id: toolCall.id,
+            content: "Memory state updated. Continue rethinking or finish.",
+          });
+          
+          messages[0] = { 
+            role: 'system', 
+            content: systemPromptBase.replace('{{currentMemory}}', workingMemory) 
+          };
+        }
+      }
+    }
+
+    await saveMemory(workingMemory);
+
+  } catch (error) {
+    console.error('[Memory Agent] Sleep-time loop failed:', error);
+  }
+}
