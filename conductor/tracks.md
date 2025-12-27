@@ -84,5 +84,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [~] Track: Sub-Agent Iterative Tool Calling
+## [x] Track: Sub-Agent Iterative Tool Calling
 *Link: [./conductor/tracks/subagent_iterative_tools_20251226/](./conductor/tracks/subagent_iterative_tools_20251226/)*
+
+---
+
+## [ ] Track: UI Transparency: Agent Thought & Action Log
+*Link: [./conductor/tracks/ui_transparency_log_20251227/](./conductor/tracks/ui_transparency_log_20251227/)*
