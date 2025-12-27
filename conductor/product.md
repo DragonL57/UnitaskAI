@@ -20,6 +20,7 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Google Calendar Integration:** Full capability to read existing events, schedule new appointments, and provide timely reminders.
 - **Tavily Integration:** Utilization of Tavily for high-performance web search and webpage content extraction, ensuring accurate and relevant information retrieval.
 - **Deep Reasoning Memory:** A persistent memory system where a dedicated agent performs "Sleep-time Compute" to consolidate facts and infer user habits over time.
+- **Interactive Transparency:** A sophisticated background process log that allows users to visualize the multi-agent orchestration, complete with interactive search result pills and a chronological timeline of actions.
 
 ## Project Status
 - **Core Implementation Complete:** The foundational multi-agent orchestration, Google Calendar integration, Tavily search, and persistent memory system are fully implemented and verified.
@@ -30,3 +31,5 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Researcher Performance:** The Researcher Agent now consistently delivers summaries for up to 10 search results using a robust manual injection architecture.
 - **Advanced Scheduling:** The assistant can now search, update, and delete Google Calendar events, enabling full lifecycle management of the user's schedule.
 - **Sleep-time Compute:** The Memory Agent now operates as a reasoning worker, performing iterative, offline consolidation to refine its understanding of the user.
+- **Interactive Transparency Log:** The UI now features a minimalistic, box-styled "Steps Taken" log that is individually collapsible and displays search results as interactive pills.
+- **Temporal Awareness:** The system is now fully aware of the user's local time (UTC+7, Vietnam Time), ensuring accurate scheduling and context.

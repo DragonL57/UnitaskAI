@@ -94,6 +94,11 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
+## [x] Track: Transparency: Concise Interactive Sub-Agent Logs
+*Link: [./conductor/tracks/ui_transparency_concise_data_20251227/](./conductor/tracks/ui_transparency_concise_data_20251227/)*
+
+---
+
 ## [x] Track: Transparency: Agent Intent Announcement
 *Link: [./conductor/tracks/ui_transparency_intent_20251227/](./conductor/tracks/ui_transparency_intent_20251227/)*
 

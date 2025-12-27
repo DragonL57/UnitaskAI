@@ -93,6 +93,7 @@ export async function saveMemory(content: string) {
     const blob = await put(MEMORY_FILE_NAME, content, {
       access: 'public',
       addRandomSuffix: false,
+      allowOverwrite: true,
     });
     console.log(`[Memory Agent] Consolidated memory saved: ${blob.url}`);
     try { revalidatePath('/'); } catch {}

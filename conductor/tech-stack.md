@@ -10,9 +10,10 @@ This document outlines the core technologies and architectural choices for the m
 ## Backend & Logic
 - **Modular Architecture:** A clean separation of concerns:
     - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, and Memory agents.
-    - `prompts/`: Managed prompt templates for each agent to ensure consistent behavior.
+    - `prompts/`: Hybrid XML/Markdown prompt architecture optimized for LLM processing and clear section boundaries.
     - `tools/`: Independent modules for external API interactions.
 - **Next.js Server Actions:** Used for secure, server-side execution of agent logic and API calls.
+- **Temporal Utilities:** Custom utility (`getVietnamTime`) to provide consistent UTC+7 (Asia/Ho_Chi_Minh) context across all agents.
 
 ## Language Model & API
 - **Poe API:** Utilizing the Poe API with the `grok-4.1-fast-non-reasoning` model for all natural language processing tasks.
