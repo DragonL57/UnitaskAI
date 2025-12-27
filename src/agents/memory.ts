@@ -68,18 +68,12 @@ export async function readMemory(silent = false): Promise<string> {
 
 export async function saveMemory(content: string) {
   try {
-    const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
-    const existing = blobs.filter(b => b.pathname === MEMORY_FILE_NAME);
-    if (existing.length > 0) {
-      await del(existing.map(b => b.url));
-    }
-
+    // Always overwrite the same memory.md file, no deletion or listing
     const blob = await put(MEMORY_FILE_NAME, content, {
       access: 'public',
       addRandomSuffix: false,
     });
     console.log(`[Memory Agent] Consolidated memory saved: ${blob.url}`);
-    
     try { revalidatePath('/'); } catch {}
   } catch (error) {
     console.error('[Memory Agent] Save error:', error);
@@ -87,8 +81,17 @@ export async function saveMemory(content: string) {
 }
 
 /**
- * Sleep-time Compute Loop
- * Iteratively refines user memory based on recent interaction.
+/**
+ * Sleep-time Compute Loop (Letta-style)
+ *
+ * This function is triggered every N user messages (configurable, default 5).
+ * It reads the current memory block (single markdown file), runs iterative consolidation
+ * and inference using the LLM, and saves the updated memory block asynchronously.
+ *
+ * The main agent increments a step counter and triggers this function in the background
+ * when the step count matches the configured frequency.
+ *
+ * To change the frequency, update `sleepTimeFrequency` in memoryAgentState.ts.
  */
 export async function evaluateAndStore(userQuery: string) {
   try {

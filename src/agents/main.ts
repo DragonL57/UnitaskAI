@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { readMemory } from '@/agents/memory';
+import { readMemory, evaluateAndStore } from '@/agents/memory';
+import { incrementStepCounter, shouldRunSleepTimeAgent } from './memoryAgentState';
 import { handleSchedulerRequest } from '@/agents/scheduler';
 import { handleResearcherRequest } from '@/agents/researcher';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
@@ -55,6 +56,8 @@ export type ChatEvent =
  * Yields orchestration events during the reasoning loop.
  */
 export async function* chat(userQuery: string, history: MessageContext[] = []): AsyncGenerator<ChatEvent> {
+  // Step 1: Increment step counter for sleep-time agent
+  incrementStepCounter();
   const memoryContent = await readMemory(true);
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryContent || 'No memory yet.')
@@ -74,6 +77,11 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
   yield { type: 'agent', name: 'main' };
 
   try {
+    // Step 2: If step count matches frequency, trigger sleep-time agent in background
+    if (shouldRunSleepTimeAgent()) {
+      // Fire and forget, do not block chat
+      evaluateAndStore(userQuery).catch((e) => console.error('Sleep-time agent error:', e));
+    }
     while (currentRound < MAX_ROUNDS) {
       currentRound++;
       
