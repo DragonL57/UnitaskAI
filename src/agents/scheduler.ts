@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { listEvents, createEvent, checkConflicts, searchEvents, updateEvent, deleteEvent } from '@/tools/calendar';
 import { SCHEDULER_PROMPT } from '@/prompts/scheduler';
+import { getVietnamTime } from '@/lib/utils';
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -93,7 +94,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 ];
 
 export async function handleSchedulerRequest(instruction: string): Promise<string> {
-  const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
+  const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', getVietnamTime());
   const internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: instruction },

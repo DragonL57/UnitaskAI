@@ -3,6 +3,7 @@ import { poe, MODEL_NAME } from '@/lib/poe';
 import { MEMORY_EVALUATOR_PROMPT } from '@/prompts/memory';
 import { revalidatePath } from 'next/cache';
 import OpenAI from 'openai';
+import { getVietnamTime } from '@/lib/utils';
 
 const MEMORY_FILE_NAME = 'memory.md';
 const INITIAL_TEMPLATE = `# User Memory
@@ -115,7 +116,7 @@ export async function saveMemory(content: string) {
 export async function evaluateAndStore(userQuery: string) {
   try {
     let workingMemory = await readMemory(true);
-    const systemPromptBase = MEMORY_EVALUATOR_PROMPT.replace('{{currentTime}}', new Date().toISOString());
+    const systemPromptBase = MEMORY_EVALUATOR_PROMPT.replace('{{currentTime}}', getVietnamTime());
 
     let rounds = 0;
     const MAX_ROUNDS = 10;

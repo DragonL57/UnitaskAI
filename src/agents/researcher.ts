@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
+import { getVietnamTime } from '@/lib/utils';
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -34,12 +35,24 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-export async function handleResearcherRequest(instruction: string): Promise<string> {
+export interface ResearcherStep {
+  type: 'search' | 'read';
+  query?: string;
+  url?: string;
+  results?: { title: string; url: string }[];
+}
+
+export interface ResearcherResponse {
+  report: string;
+  steps: ResearcherStep[];
+}
+
+export async function handleResearcherRequest(instruction: string): Promise<ResearcherResponse> {
   if (!instruction || !instruction.trim()) {
-    return "Empty instruction provided.";
+    return { report: "Empty instruction provided.", steps: [] };
   }
 
-  const systemPrompt = RESEARCHER_PROMPT.replace('{{currentTime}}', new Date().toISOString());
+  const systemPrompt = RESEARCHER_PROMPT.replace('{{currentTime}}', getVietnamTime());
   const internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: instruction },
@@ -47,6 +60,7 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
 
   let rounds = 0;
   const MAX_ROUNDS = 5;
+  const steps: ResearcherStep[] = [];
 
   try {
     while (rounds < MAX_ROUNDS) {
@@ -62,7 +76,10 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
       internalMessages.push(assistantMessage);
 
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-        return assistantMessage.content || "Task completed.";
+        return { 
+          report: assistantMessage.content || "Task completed.",
+          steps
+        };
       }
 
       for (const toolCall of assistantMessage.tool_calls) {
@@ -74,8 +91,17 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
           let toolResult;
           if (functionName === 'search') {
             toolResult = await _search(functionArgs.query);
+            steps.push({
+              type: 'search',
+              query: functionArgs.query,
+              results: toolResult.results?.map((r: { title: string; url: string }) => ({ title: r.title, url: r.url }))
+            });
           } else if (functionName === 'readWebpage') {
             toolResult = await _readWebpage(functionArgs.url);
+            steps.push({
+              type: 'read',
+              url: functionArgs.url
+            });
           }
 
           internalMessages.push({
@@ -86,9 +112,9 @@ export async function handleResearcherRequest(instruction: string): Promise<stri
         }
       }
     }
-    return "I reached my tool limit for this research task.";
+    return { report: "I reached my tool limit for this research task.", steps };
   } catch (error) {
     console.error('Researcher Specialist Error:', error);
-    return "Report: Failed to complete research task.";
+    return { report: "Report: Failed to complete research task.", steps };
   }
 }

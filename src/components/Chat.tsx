@@ -29,7 +29,6 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isReceivingContent, setIsReceivingContent] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -45,7 +44,6 @@ export default function Chat() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
       setIsLoading(false);
-      setIsReceivingContent(false);
     }
   };
 
@@ -59,11 +57,10 @@ export default function Chat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-    setIsReceivingContent(false);
 
-    const assistantMessageId = (Date.now() + 1).toString();
-    const assistantMessage: Message = { id: assistantMessageId, role: 'assistant', content: '', agent: 'main', steps: [] };
-    setMessages(prev => [...prev, assistantMessage]);
+    const initialAssistantId = (Date.now() + 1).toString();
+    const initialAssistantMessage: Message = { id: initialAssistantId, role: 'assistant', content: '', agent: 'main', steps: [] };
+    setMessages(prev => [...prev, initialAssistantMessage]);
 
     try {
       const history = messages.slice(-10).map(m => ({
@@ -83,7 +80,6 @@ export default function Chat() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      let fullContent = '';
 
       if (!reader) throw new Error('No reader found');
 
@@ -99,22 +95,58 @@ export default function Chat() {
               try {
                 const event = JSON.parse(line.replace('__EVENT__:', ''));
                 
-                if (event.type === 'agent') {
-                  setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, agent: event.name } : m));
-                } else if (event.type === 'thought' || event.type === 'action' || event.type === 'report') {
-                  setMessages(prev => prev.map(m => 
-                    m.id === assistantMessageId 
-                      ? { ...m, steps: [...(m.steps || []), { type: event.type, text: event.text, metadata: event.metadata }] } 
-                      : m
-                  ));
-                } else if (event.type === 'chunk') {
-                  // As soon as we get the first chunk, we are receiving the actual response
-                  setIsReceivingContent(true);
-                  fullContent += event.text;
-                  setMessages(prev => prev.map(m => 
-                    m.id === assistantMessageId ? { ...m, content: fullContent } : m
-                  ));
-                }
+                setMessages(prev => {
+                  const lastMsg = prev[prev.length - 1];
+                  
+                  // Logic to decide if we need a new bubble for chronological ordering
+                  let needsNew = false;
+                  
+                  // 1. Transition from steps to content
+                  if (event.type === 'chunk' && lastMsg.steps && lastMsg.steps.length > 0) {
+                    needsNew = true;
+                  } 
+                  // 2. Transition from content to steps
+                  else if ((event.type === 'thought' || event.type === 'action' || event.type === 'report') && lastMsg.content) {
+                    needsNew = true;
+                  }
+                  // 3. Agent change while current bubble is not empty
+                  else if (event.type === 'agent' && event.name !== lastMsg.agent && (lastMsg.content || (lastMsg.steps && lastMsg.steps.length > 0))) {
+                    needsNew = true;
+                  }
+
+                  if (needsNew) {
+                    const newId = (Date.now() + Math.random()).toString();
+                    const newMsg: Message = { 
+                      id: newId, 
+                      role: 'assistant', 
+                      content: event.type === 'chunk' ? event.text : '', 
+                      agent: event.type === 'agent' ? event.name : lastMsg.agent, 
+                      steps: (event.type === 'thought' || event.type === 'action' || event.type === 'report') 
+                        ? [{ type: event.type, text: event.text, metadata: event.metadata }]
+                        : []
+                    };
+                    return [...prev, newMsg];
+                  } else {
+                    // Update existing message WITHOUT mutation
+                    return prev.map((m, idx) => {
+                      if (idx !== prev.length - 1) return m;
+                      
+                      const updated = { ...m };
+                      if (event.type === 'agent') {
+                        updated.agent = event.name;
+                      } else if (event.type === 'thought' || event.type === 'action' || event.type === 'report') {
+                        updated.steps = [...(m.steps || []), { 
+                          type: event.type, 
+                          text: event.text, 
+                          metadata: event.metadata 
+                        }];
+                      } else if (event.type === 'chunk') {
+                        updated.content = m.content + event.text;
+                      }
+                      return updated;
+                    });
+                  }
+                });
               } catch {
                 // Ignore incomplete JSON chunks
               }
@@ -129,12 +161,11 @@ export default function Chat() {
       } else {
         console.error('Error sending message:', error);
         setMessages(prev => prev.map(m => 
-          m.id === assistantMessageId ? { ...m, content: 'Sorry, I encountered an error. Please try again.' } : m
+          m.id === initialAssistantId ? { ...m, content: 'Sorry, I encountered an error. Please try again.' } : m
         ));
       }
     } finally {
       setIsLoading(false);
-      setIsReceivingContent(false);
       abortControllerRef.current = null;
     }
   };
@@ -143,29 +174,21 @@ export default function Chat() {
     <div className="flex-1 flex flex-col min-h-0 bg-white">
       {/* Message List */}
       <div className="flex-1 overflow-y-auto scroll-smooth">
-        <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-10" ref={scrollRef}>
+        <div className="max-w-4xl mx-auto w-full p-4 md:p-6 space-y-4" ref={scrollRef}>
           {messages.map((m) => {
             const hasSteps = m.steps && m.steps.length > 0;
             // Only show bubble if it has content OR if it's the current loading message and has NO steps yet
             const shouldShowBubble = m.content || (!hasSteps && m.id === messages[messages.length - 1].id && isLoading);
 
             return (
-              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                <div className="flex flex-col gap-3 max-w-[95%] sm:max-w-[85%]">
+              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-1 duration-200`}>
+                <div className="flex flex-col gap-1.5 max-w-[95%] sm:max-w-[85%]">
                   
-                  {/* Steps Log - Auto expanded if loading and NOT receiving final content */}
-                  {hasSteps && (
-                    <ActionLog 
-                      steps={m.steps!}
-                      forceOpen={isLoading && !isReceivingContent && m.id === messages[messages.length - 1].id} 
-                    />
-                  )}
-
                   {shouldShowBubble && (
-                    <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${ 
+                    <div className={`px-4 py-2.5 md:px-5 md:py-3 rounded-2xl shadow-sm ${ 
                       m.role === 'user' 
                         ? 'bg-indigo-600 text-white rounded-tr-none' 
-                        : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
+                        : 'bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200/50'
                     }`}>
                       {m.role === 'assistant' && !m.content && isLoading ? (
                         <div className="flex gap-1.5 py-2">
@@ -188,14 +211,13 @@ export default function Chat() {
                       )}
                     </div>
                   )}
-                  
-                  {m.agent && m.agent !== 'main' && m.content && (
-                    <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                      <span className="text-[10px] uppercase font-black tracking-widest text-gray-400">
-                        {m.agent}
-                      </span>
-                    </div>
+
+                  {/* Steps Log - Now below the bubble */}
+                  {hasSteps && (
+                    <ActionLog 
+                      steps={m.steps!}
+                      forceOpen={isLoading && !m.content && m.id === messages[messages.length - 1].id} 
+                    />
                   )}
                 </div>
               </div>
@@ -255,80 +277,122 @@ function ActionLog({ steps, forceOpen }: { steps: OrchestrationStep[], forceOpen
   const isOpen = forceOpen || userOpened;
 
   return (
-    <div className="ml-2 mb-1">
+    <div className="ml-1 my-1">
       <button 
         onClick={() => setUserOpened(!userOpened)}
-        className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors ${isOpen ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-500'}`}
+        className={`flex items-center gap-2 px-2.5 py-1 rounded-full transition-all text-[9px] font-bold uppercase tracking-wider border ${ 
+          isOpen 
+            ? 'bg-indigo-50 border-indigo-100 text-indigo-600' 
+            : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-gray-100'
+        }`}
       >
-        <Zap className={`w-3 h-3 ${forceOpen ? 'animate-pulse' : ''}`} />
-        <span>{steps.length} Steps Taken</span>
-        {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        <Zap className={`w-2.5 h-2.5 ${forceOpen ? 'animate-pulse' : ''}`} />
+        <span>{steps.length} {steps.length === 1 ? 'Step' : 'Steps'} Background</span>
+        {isOpen ? <ChevronUp className="w-2.5 h-2.5 ml-0.5" /> : <ChevronDown className="w-2.5 h-2.5 ml-0.5" />}
       </button>
       
       {isOpen && (
-        <div className="mt-3 space-y-3 pl-4 border-l-2 border-indigo-100 animate-in slide-in-from-top-2 duration-300">
-          {steps.map((step, i) => {
-            const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
-            
-            return (
-              <div key={i} className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  {step.type === 'thought' && <Zap className="w-3 h-3 text-amber-400" />}
-                  {step.type === 'action' && <Search className="w-3 h-3 text-blue-400" />}
-                  {step.type === 'report' && <FileText className="w-3 h-3 text-green-400" />}
-                  <span className="text-[9px] font-bold uppercase text-gray-400">{step.type}</span>
-                </div>
-                
-                <div className="group relative">
-                  {step.type === 'report' && hasMetadata ? (
-                    <div className="flex flex-wrap gap-2 pl-5 py-2">
-                      {step.metadata?.urls?.map((url, idx) => (
-                        <a 
-                          key={idx} 
-                          href={url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full text-[11px] font-medium transition-all border border-indigo-100/50"
-                        >
-                          <Search className="w-3 h-3" />
-                          <span>Source {idx + 1}</span>
-                        </a>
-                      ))}
-                      {step.metadata?.titles?.map((title, idx) => (
-                        <div 
-                          key={idx} 
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-medium border border-emerald-100/50"
-                        >
-                          <FileText className="w-3 h-3" />
-                          <span>{title}</span>
-                        </div>
-                      ))}
-                      
-                      <details className="w-full mt-1">
-                        <summary className="text-[10px] text-gray-400 cursor-pointer hover:text-indigo-500 list-none flex items-center gap-1">
-                          <ChevronDown className="w-2.5 h-2.5" />
-                          <span>Show raw report</span>
-                        </summary>
-                        <div className="mt-2 text-xs text-gray-600 leading-normal pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {step.text}
-                          </ReactMarkdown>
-                        </div>
-                      </details>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-gray-600 leading-normal pl-5 pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {step.text}
-                      </ReactMarkdown>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="mt-2 ml-2.5 p-0.5 space-y-0.5 border-l-2 border-gray-100 animate-in slide-in-from-top-1 duration-200">
+          {steps.map((step, i) => (
+            <CollapsibleStep key={i} step={step} />
+          ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function CollapsibleStep({ step }: { step: OrchestrationStep }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isDelegation = step.text.includes('➔');
+  const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
+
+  // Icon and Color mapping
+  const config = {
+    thought: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50' },
+    action: { 
+      icon: isDelegation ? Zap : Search, 
+      color: isDelegation ? 'text-indigo-600' : 'text-blue-500', 
+      bg: isDelegation ? 'bg-indigo-50' : 'bg-blue-50' 
+    },
+    report: { icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+  }[step.type];
+
+  const Icon = config.icon;
+
+  // Decide if we should allow expansion (if there's a long text or metadata)
+  const isExpandable = step.text.length > 60 || hasMetadata || step.type === 'report';
+
+  return (
+    <div className="relative pl-6 py-1 group">
+      {/* Connector Line Connector */}
+      <div className={`absolute left-[-5px] top-[14px] w-2 h-2 rounded-full border-2 bg-white transition-all z-10 ${ 
+        isExpanded ? 'border-indigo-500 scale-110' : 'border-gray-200 group-hover:border-gray-400'
+      }`} />
+
+      <div className={`flex flex-col rounded-xl transition-all border ${ 
+        isExpanded 
+          ? 'bg-gray-50/30 border-gray-100 p-2.5' 
+          : 'bg-transparent border-transparent hover:bg-gray-50/50 px-2 py-1'
+      }`}>
+        <button 
+          onClick={() => isExpandable && setIsExpanded(!isExpanded)}
+          disabled={!isExpandable}
+          className={`flex items-center gap-3 w-full text-left ${isExpandable ? 'cursor-pointer' : 'cursor-default'}`}
+        >
+          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>
+            <Icon className="w-3 h-3" />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={`text-[7px] font-black uppercase tracking-widest px-1 rounded ${config.bg} ${config.color}`}>
+                {step.type}
+              </span>
+              <span className={`text-[11px] font-medium truncate transition-colors ${isExpanded ? 'text-gray-900' : 'text-gray-500'}`}>
+                {step.text}
+              </span>
+            </div>
+          </div>
+          
+          {isExpandable && (
+            <ChevronDown className={`w-3 h-3 text-gray-300 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+          )}
+        </button>
+
+        {isExpanded && (
+          <div className="mt-2.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-200">
+            {/* Only show markdown if it's long, otherwise the header is enough */}
+            {step.text.length > 60 && (
+              <div className="text-[11px] text-gray-600 leading-relaxed pl-1 bg-white/50 p-2 rounded-lg border border-gray-100/50">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {step.text}
+                </ReactMarkdown>
+              </div>
+            )}
+
+            {hasMetadata && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {step.metadata?.urls?.map((url, idx) => {
+                  const title = step.metadata?.titles?.[idx] || `Source ${idx + 1}`;
+                  return (
+                    <a 
+                      key={idx} 
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-indigo-50 text-gray-700 hover:text-indigo-600 rounded-lg text-[10px] font-bold transition-all border border-gray-100 hover:border-indigo-100 shadow-xs active:scale-95"
+                    >
+                      <Search className="w-3 h-3" />
+                      <span className="max-w-[150px] truncate">{title}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

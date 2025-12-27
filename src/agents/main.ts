@@ -5,6 +5,7 @@ import { incrementStepCounter, shouldRunSleepTimeAgent } from './memoryAgentStat
 import { handleSchedulerRequest } from '@/agents/scheduler';
 import { handleResearcherRequest } from '@/agents/researcher';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
+import { getVietnamTime } from '@/lib/utils';
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
@@ -47,8 +48,8 @@ export interface MessageContext {
 export type ChatEvent = 
   | { type: 'agent', name: string }
   | { type: 'thought', text: string }
-  | { type: 'action', text: string }
-  | { type: 'report', text: string, metadata?: Record<string, any> }
+  | { type: 'action', text: string, metadata?: Record<string, string[] | undefined> }
+  | { type: 'report', text: string, metadata?: Record<string, string[] | undefined> }
   | { type: 'chunk', text: string };
 
 /**
@@ -61,7 +62,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
   const memoryContent = await readMemory(true);
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryContent || 'No memory yet.')
-    .replace('{{currentTime}}', new Date().toISOString());
+    .replace('{{currentTime}}', getVietnamTime());
 
   const baseMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
@@ -126,38 +127,40 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         }
 
         yield { type: 'agent', name: agentName };
-        yield { type: 'action', text: `Commanding ${agentName}: "${args.instruction}"` };
+        yield { type: 'action', text: `Main ➔ ${agentName.charAt(0).toUpperCase() + agentName.slice(1)}: "${args.instruction}"` };
 
-        const report = (await (fn.name === 'delegateToScheduler' 
+        const subResponse = await (fn.name === 'delegateToScheduler' 
           ? handleSchedulerRequest(args.instruction) 
-          : handleResearcherRequest(args.instruction))) || "";
+          : handleResearcherRequest(args.instruction));
 
-        const metadata: Record<string, any> = {};
-        if (agentName === 'researcher') {
-          // Extract URLs from the report
-          const urlRegex = /(https?:\/\/[^\s\)]+)/g;
-          const urls = Array.from(new Set(report.match(urlRegex) || []));
-          if (urls.length > 0) {
-            metadata.urls = urls;
-          }
-        } else if (agentName === 'scheduler') {
-          // Extract potential event titles (quoted text)
-          const titleRegex = /"([^"]+)"/g;
-          const titles = Array.from(new Set(Array.from(report.matchAll(titleRegex)).map(m => m[1])));
-          if (titles.length > 0) {
-            metadata.titles = titles;
+        if (typeof subResponse !== 'string') {
+          // Yield internal steps if they exist
+          if (subResponse.steps) {
+            for (const s of subResponse.steps) {
+              if (s.type === 'search') {
+                yield { 
+                  type: 'action', 
+                  text: `Web Search: "${s.query}"`, 
+                  metadata: { urls: s.results?.map(r => r.url), titles: s.results?.map(r => r.title) } 
+                };
+              } else if (s.type === 'read') {
+                yield { type: 'action', text: `Reading Webpage: ${s.url}` };
+              }
+            }
           }
         }
 
-        yield { type: 'report', text: report, metadata };
-        yield { type: 'agent', name: 'main' }; 
-
+        const report = typeof subResponse === 'string' ? subResponse : subResponse.report;
+        yield { type: 'report', text: `${agentName.charAt(0).toUpperCase() + agentName.slice(1)} ➔ Main: "Report generated"` };
+        
         internalMessages.push(assistantMessage);
         internalMessages.push({
           role: 'tool',
           tool_call_id: toolCall.id,
-          content: `Specialist Report from ${agentName}: "${report}"`,
+          content: `Specialist Report from ${agentName}: "${report}"`, 
         });
+        
+        yield { type: 'agent', name: 'main' }; 
       } else {
         break;
       }
