@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, Bot } from 'lucide-react';
+import { Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -75,7 +75,6 @@ export default function Chat() {
               const agentName = metadataLine.split(':')[1].trim() as Message['agent'];
               setMessages(prev => prev.map(m => m.id === assistantMessageId ? { ...m, agent: agentName } : m));
               hasParsedMetadata = true;
-              
               chunkValue = lines.filter(l => l !== metadataLine).join('\n');
             }
           }
@@ -100,60 +99,51 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex flex-col flex-1 h-full w-full bg-white overflow-hidden relative">
-      {/* Message Stream */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-8 space-y-10 bg-white scroll-smooth">
-        <div className="max-w-4xl mx-auto w-full space-y-10">
+    <div className="flex-1 flex flex-col min-h-0 bg-white">
+      {/* Message List */}
+      <div className="flex-1 overflow-y-auto scroll-smooth">
+        <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-10" ref={scrollRef}>
           {messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-              <div className={`flex max-w-[90%] sm:max-w-[85%] gap-4 md:gap-6 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 mt-1 shadow-sm ${m.role === 'user' ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-500'}`}>
-                  {m.role === 'user' ? <User className="w-5 h-5 md:w-6 md:h-6" /> : <Bot className="w-5 h-5 md:w-6 md:h-6" />}
-                </div>
-                
-                <div className="flex flex-col gap-2.5">
-                  <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${ 
-                    m.role === 'user' 
-                      ? 'bg-indigo-600 text-white rounded-tr-none' 
-                      : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
-                  }`}>
-                    {m.role === 'assistant' && !m.content && isLoading ? (
-                      <div className="flex gap-1 py-2">
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
-                      </div>
-                    ) : (
-                      <div className={`text-[15px] md:text-[16px] leading-relaxed font-medium markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {m.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {m.agent && m.agent !== 'main' && (
-                    <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                      <span className="text-[10px] md:text-[11px] uppercase font-black tracking-widest text-gray-400">
-                        {m.agent}
-                      </span>
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+              <div className="flex flex-col gap-2 max-w-[95%] sm:max-w-[85%]">
+                <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${ 
+                  m.role === 'user' 
+                    ? 'bg-indigo-600 text-white rounded-tr-none' 
+                    : 'bg-gray-100 text-gray-800 rounded-tl-none'
+                }`}>
+                  {m.role === 'assistant' && !m.content && isLoading ? (
+                    <div className="flex gap-1.5 py-2">
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                    </div>
+                  ) : (
+                    <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {m.content}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </div>
+                
+                {m.agent && m.agent !== 'main' && (
+                  <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400">
+                      {m.agent}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
-          
-          {/* Explicit spacer to prevent content overlap with floating input */}
-          <div className="h-32 md:h-40 shrink-0" />
         </div>
       </div>
 
-      {/* Floating Chat Input Area */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-8 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none z-20">
-        <div className="max-w-4xl mx-auto flex items-end gap-2 md:gap-4 pointer-events-auto">
-          <div className="flex-1 bg-white rounded-[32px] transition-all duration-300 border border-gray-200 shadow-2xl shadow-indigo-100/50 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/5 group px-2">
+      {/* Input Bar */}
+      <div className="p-4 md:p-6 bg-white border-t border-gray-100 shrink-0">
+        <div className="max-w-3xl mx-auto flex items-end gap-3">
+          <div className="flex-1 bg-gray-100/80 rounded-3xl transition-all border border-transparent focus-within:bg-white focus-within:border-indigo-200 focus-within:ring-4 focus-within:ring-indigo-500/5 group px-2">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -165,7 +155,7 @@ export default function Chat() {
               }}
               rows={1}
               placeholder="Message..."
-              className="w-full bg-transparent border-none focus:ring-0 outline-none px-6 py-4 md:py-5 resize-none text-[16px] text-gray-800 max-h-48 min-h-[64px] placeholder:text-gray-400 placeholder:font-bold"
+              className="w-full bg-transparent border-none focus:ring-0 outline-none px-6 py-4 resize-none text-[16px] text-gray-800 max-h-40 min-h-[56px]"
               style={{ height: 'auto' }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
@@ -177,9 +167,9 @@ export default function Chat() {
           <button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
-            className="mb-1 w-14 h-14 md:w-16 md:h-16 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-xl shadow-indigo-200 active:scale-90 shrink-0"
+            className="mb-1 w-12 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
           >
-            <Send className="w-6 h-6 md:w-7 md:h-7 ml-0.5" />
+            <Send className="w-5 h-5 ml-0.5" />
           </button>
         </div>
       </div>
