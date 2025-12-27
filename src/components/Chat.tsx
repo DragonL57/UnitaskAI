@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, User, Bot, ChevronDown, ChevronUp, Zap, Search, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface OrchestrationStep {
   type: 'thought' | 'action' | 'report';
@@ -151,7 +152,13 @@ export default function Chat() {
                         </div>
                       ) : (
                         <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            components={{
+                              br: () => <br />,
+                            }}
+                          >
                             {m.content}
                           </ReactMarkdown>
                         </div>
