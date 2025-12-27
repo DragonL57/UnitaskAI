@@ -37,38 +37,62 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 ];
 
 export interface MessageContext {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
+  tool_call_id?: string;
+  tool_calls?: any[];
 }
 
 export async function chat(userQuery: string, history: MessageContext[] = [], stream = false) {
   const memoryContent = await readMemory(true);
-
   const systemPrompt = MAIN_COMPANION_PROMPT
     .replace('{{memory}}', memoryContent || 'No memory yet.')
     .replace('{{currentTime}}', new Date().toISOString());
 
-  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+  // Base messages for the entire session
+  const baseMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
     ...history.map(m => ({ role: m.role, content: m.content } as OpenAI.Chat.Completions.ChatCompletionMessageParam)),
     { role: 'user', content: userQuery }
   ];
 
+  let internalMessages = [...baseMessages];
+  let currentRound = 0;
+  const MAX_ROUNDS = 5;
+  let lastAgentUsed = 'main';
+
   try {
-    // 1. Initial Orchestration Call
-    const response = await poe.chat.completions.create({
-      model: MODEL_NAME,
-      messages: messages,
-      tools: tools,
-      tool_choice: 'auto',
-    });
+    while (currentRound < MAX_ROUNDS) {
+      currentRound++;
+      console.log(`[Main Agent] Orchestration Round ${currentRound}...`);
 
-    const assistantMessage = response.choices[0].message;
+      const response = await poe.chat.completions.create({
+        model: MODEL_NAME,
+        messages: internalMessages,
+        tools: tools,
+        tool_choice: 'auto',
+      });
 
-    // 2. Check for Delegation
-    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-      const toolCall = assistantMessage.tool_calls[0];
+      const assistantMessage = response.choices[0].message;
       
+      // 1. If NO tool calls, this is the FINAL response
+      if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        if (stream) {
+          // Stream the final thought
+          return {
+            stream: await poe.chat.completions.create({
+              model: MODEL_NAME,
+              messages: internalMessages,
+              stream: true,
+            }),
+            agent: lastAgentUsed as any
+          };
+        }
+        return { content: assistantMessage.content, agent: lastAgentUsed as any };
+      }
+
+      // 2. Handle Tool Calls
+      const toolCall = assistantMessage.tool_calls[0];
       if (toolCall.type === 'function') {
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
@@ -83,57 +107,26 @@ export async function chat(userQuery: string, history: MessageContext[] = [], st
           report = (await handleResearcherRequest(args.instruction)) || "";
         }
 
-        // 3. Final Synthesis (Address the User with the Report info)
-        const finalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-          ...messages,
-          {
-            role: assistantMessage.role,
-            content: assistantMessage.content || '',
-            tool_calls: assistantMessage.tool_calls,
-          },
-          {
-            role: 'tool',
-            tool_call_id: toolCall.id,
-            content: `Specialist Report: "${report}"`,
-          },
-        ];
+        lastAgentUsed = agentName;
 
-        if (stream) {
-          return {
-            stream: await poe.chat.completions.create({
-              model: MODEL_NAME,
-              messages: finalMessages,
-              stream: true,
-            }),
-            agent: agentName
-          };
-        }
-
-        const secondResponse = await poe.chat.completions.create({
-          model: MODEL_NAME,
-          messages: finalMessages,
+        // Push the assistant's request and the specialist's report to context
+        internalMessages.push(assistantMessage);
+        internalMessages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: `Specialist Report from ${agentName}: "${report}"`,
         });
-
-        return { content: secondResponse.choices[0].message.content, agent: agentName };
+        
+        // Loop continues...
+      } else {
+        break;
       }
     }
 
-    // Standard conversational response
-    if (stream) {
-      return {
-        stream: await poe.chat.completions.create({
-          model: MODEL_NAME,
-          messages: messages,
-          stream: true,
-        }),
-        agent: 'main'
-      };
-    }
-
-    return { content: assistantMessage.content, agent: 'main' };
+    return { content: "I've reached my limit for this task. Could you be more specific?", agent: 'main' as const };
 
   } catch (error) {
-    console.error('Main Agent Error:', error);
+    console.error('Main Agent Orchestration Error:', error);
     throw error;
   }
 }
