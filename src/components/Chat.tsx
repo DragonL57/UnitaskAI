@@ -9,6 +9,10 @@ import rehypeRaw from 'rehype-raw';
 interface OrchestrationStep {
   type: 'thought' | 'action' | 'report';
   text: string;
+  metadata?: {
+    urls?: string[];
+    titles?: string[];
+  };
 }
 
 interface Message {
@@ -100,7 +104,7 @@ export default function Chat() {
                 } else if (event.type === 'thought' || event.type === 'action' || event.type === 'report') {
                   setMessages(prev => prev.map(m => 
                     m.id === assistantMessageId 
-                      ? { ...m, steps: [...(m.steps || []), { type: event.type, text: event.text }] } 
+                      ? { ...m, steps: [...(m.steps || []), { type: event.type, text: event.text, metadata: event.metadata }] } 
                       : m
                   ));
                 } else if (event.type === 'chunk') {
@@ -263,21 +267,66 @@ function ActionLog({ steps, forceOpen }: { steps: OrchestrationStep[], forceOpen
       
       {isOpen && (
         <div className="mt-3 space-y-3 pl-4 border-l-2 border-indigo-100 animate-in slide-in-from-top-2 duration-300">
-          {steps.map((step, i) => (
-            <div key={i} className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                {step.type === 'thought' && <Zap className="w-3 h-3 text-amber-400" />}
-                {step.type === 'action' && <Search className="w-3 h-3 text-blue-400" />}
-                {step.type === 'report' && <FileText className="w-3 h-3 text-green-400" />}
-                <span className="text-[9px] font-bold uppercase text-gray-400">{step.type}</span>
+          {steps.map((step, i) => {
+            const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
+            
+            return (
+              <div key={i} className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  {step.type === 'thought' && <Zap className="w-3 h-3 text-amber-400" />}
+                  {step.type === 'action' && <Search className="w-3 h-3 text-blue-400" />}
+                  {step.type === 'report' && <FileText className="w-3 h-3 text-green-400" />}
+                  <span className="text-[9px] font-bold uppercase text-gray-400">{step.type}</span>
+                </div>
+                
+                <div className="group relative">
+                  {step.type === 'report' && hasMetadata ? (
+                    <div className="flex flex-wrap gap-2 pl-5 py-2">
+                      {step.metadata?.urls?.map((url, idx) => (
+                        <a 
+                          key={idx} 
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full text-[11px] font-medium transition-all border border-indigo-100/50"
+                        >
+                          <Search className="w-3 h-3" />
+                          <span>Source {idx + 1}</span>
+                        </a>
+                      ))}
+                      {step.metadata?.titles?.map((title, idx) => (
+                        <div 
+                          key={idx} 
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-medium border border-emerald-100/50"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>{title}</span>
+                        </div>
+                      ))}
+                      
+                      <details className="w-full mt-1">
+                        <summary className="text-[10px] text-gray-400 cursor-pointer hover:text-indigo-500 list-none flex items-center gap-1">
+                          <ChevronDown className="w-2.5 h-2.5" />
+                          <span>Show raw report</span>
+                        </summary>
+                        <div className="mt-2 text-xs text-gray-600 leading-normal pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {step.text}
+                          </ReactMarkdown>
+                        </div>
+                      </details>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-600 leading-normal pl-5 pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {step.text}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-xs text-gray-600 leading-normal pl-5 pr-2 py-2 bg-gray-50 rounded-lg border border-gray-100 markdown-content">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {step.text}
-                </ReactMarkdown>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
