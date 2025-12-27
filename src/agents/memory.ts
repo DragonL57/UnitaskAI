@@ -46,24 +46,44 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
 
 export async function readMemory(silent = false): Promise<string> {
   if (!silent) console.log('[Memory Agent] Reading from Blob...');
-  try {
-    const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
-    const memoryBlob = blobs
-      .filter(b => b.pathname === MEMORY_FILE_NAME)
-      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
+  
+  const maxRetries = 3;
+  let attempt = 0;
 
-    if (!memoryBlob) {
-      return INITIAL_TEMPLATE;
+  while (attempt < maxRetries) {
+    try {
+      const { blobs } = await list({ prefix: MEMORY_FILE_NAME });
+      const memoryBlob = blobs
+        .filter(b => b.pathname === MEMORY_FILE_NAME)
+        .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())[0];
+
+      if (!memoryBlob) {
+        return INITIAL_TEMPLATE;
+      }
+
+      const cacheBuster = `?t=${Date.now()}`;
+      // Use a slightly longer timeout and retry on failure
+      const response = await fetch(memoryBlob.url + cacheBuster, { 
+        cache: 'no-store',
+        signal: AbortSignal.timeout(15000) // 15 seconds timeout
+      });
+      
+      if (!response.ok) throw new Error(`Fetch failed with status ${response.status}`);
+      return await response.text();
+    } catch (error) {
+      attempt++;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!silent) console.warn(`[Memory Agent] Read attempt ${attempt} failed:`, errorMessage);
+      
+      if (attempt >= maxRetries) {
+        if (!silent) console.error('[Memory Agent] Max retries reached. Returning initial template.');
+        return INITIAL_TEMPLATE;
+      }
+      // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
     }
-
-    const cacheBuster = `?t=${Date.now()}`;
-    const response = await fetch(memoryBlob.url + cacheBuster, { cache: 'no-store' });
-    if (!response.ok) throw new Error('Fetch failed');
-    return await response.text();
-  } catch (error) {
-    console.error('[Memory Agent] Read error:', error);
-    return INITIAL_TEMPLATE;
   }
+  return INITIAL_TEMPLATE;
 }
 
 export async function saveMemory(content: string) {
@@ -80,7 +100,6 @@ export async function saveMemory(content: string) {
   }
 }
 
-/**
 /**
  * Sleep-time Compute Loop (Letta-style)
  *
