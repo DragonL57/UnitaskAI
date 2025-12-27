@@ -5,21 +5,26 @@ import { chat as mainChat, MessageContext } from '@/agents/main';
 /**
  * sendChatMessage Server Action
  * Note: The main chat flow has migrated to the /api/chat route for streaming support.
- * This action is maintained for non-streaming compatibility if needed.
+ * This action is maintained for non-streaming compatibility by accumulating the generator chunks.
  */
 export async function sendChatMessage(message: string, history: MessageContext[] = []) {
   try {
-    const result = await mainChat(message, history, false);
-    
-    // We only care about non-stream results here
-    if ('content' in result) {
-      return {
-        content: result.content || '',
-        agent: result.agent as 'scheduler' | 'researcher' | 'main'
-      };
+    const eventGenerator = mainChat(message, history);
+    let fullContent = '';
+    let lastAgent: 'scheduler' | 'researcher' | 'main' = 'main';
+
+    for await (const event of eventGenerator) {
+      if (event.type === 'chunk') {
+        fullContent += event.text;
+      } else if (event.type === 'agent') {
+        lastAgent = event.name as 'scheduler' | 'researcher' | 'main';
+      }
     }
 
-    return { content: '', agent: 'main' as const };
+    return {
+      content: fullContent,
+      agent: lastAgent
+    };
   } catch (error) {
     console.error('Server Action Error in sendChatMessage:', error);
     if (error instanceof Error) {

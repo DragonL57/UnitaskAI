@@ -24,6 +24,7 @@ export default function Chat() {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isReceivingContent, setIsReceivingContent] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +41,7 @@ export default function Chat() {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
+    setIsReceivingContent(false);
 
     const assistantMessageId = (Date.now() + 1).toString();
     const assistantMessage: Message = { id: assistantMessageId, role: 'assistant', content: '', agent: 'main', steps: [] };
@@ -63,7 +65,6 @@ export default function Chat() {
       const decoder = new TextDecoder();
       let done = false;
       let fullContent = '';
-      let hasParsedMetadata = false;
 
       if (!reader) throw new Error('No reader found');
 
@@ -88,6 +89,8 @@ export default function Chat() {
                       : m
                   ));
                 } else if (event.type === 'chunk') {
+                  // As soon as we get the first chunk, we are receiving the actual response
+                  setIsReceivingContent(true);
                   fullContent += event.text;
                   setMessages(prev => prev.map(m => 
                     m.id === assistantMessageId ? { ...m, content: fullContent } : m
@@ -108,6 +111,7 @@ export default function Chat() {
       ));
     } finally {
       setIsLoading(false);
+      setIsReceivingContent(false);
     }
   };
 
@@ -116,46 +120,57 @@ export default function Chat() {
       {/* Message List */}
       <div className="flex-1 overflow-y-auto scroll-smooth">
         <div className="max-w-4xl mx-auto w-full p-4 md:p-8 space-y-10" ref={scrollRef}>
-          {messages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-              <div className="flex flex-col gap-3 max-w-[95%] sm:max-w-[85%]">
-                
-                {/* Steps Log */}
-                {m.steps && m.steps.length > 0 && (
-                  <ActionLog steps={m.steps} />
-                )}
+          {messages.map((m) => {
+            const hasSteps = m.steps && m.steps.length > 0;
+            // Only show bubble if it has content OR if it's the current loading message and has NO steps yet
+            const shouldShowBubble = m.content || (!hasSteps && m.id === messages[messages.length - 1].id && isLoading);
 
-                <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${m.role === 'user' 
-                    ? 'bg-indigo-600 text-white rounded-tr-none'
-                    : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
-                }`}>
-                  {m.role === 'assistant' && !m.content && isLoading ? (
-                    <div className="flex gap-1.5 py-2">
-                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+            return (
+              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                <div className="flex flex-col gap-3 max-w-[95%] sm:max-w-[85%]">
+                  
+                  {/* Steps Log - Auto expanded if loading and NOT receiving final content */}
+                  {hasSteps && (
+                    <ActionLog 
+                      steps={m.steps!}
+                      forceOpen={isLoading && !isReceivingContent && m.id === messages[messages.length - 1].id} 
+                    />
+                  )}
+
+                  {shouldShowBubble && (
+                    <div className={`px-5 py-3.5 md:px-6 md:py-4 rounded-3xl shadow-sm ${ 
+                      m.role === 'user' 
+                        ? 'bg-indigo-600 text-white rounded-tr-none' 
+                        : 'bg-gray-100 text-gray-800 rounded-tl-none border border-transparent'
+                    }`}>
+                      {m.role === 'assistant' && !m.content && isLoading ? (
+                        <div className="flex gap-1.5 py-2">
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></div>
+                        </div>
+                      ) : (
+                        <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {m.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${m.role === 'user' ? 'text-white' : 'text-gray-800'}`}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {m.content}
-                      </ReactMarkdown>
+                  )}
+                  
+                  {m.agent && m.agent !== 'main' && m.content && (
+                    <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+                      <span className="text-[10px] uppercase font-black tracking-widest text-gray-400">
+                        {m.agent}
+                      </span>
                     </div>
                   )}
                 </div>
-                
-                {m.agent && m.agent !== 'main' && (
-                  <div className={`flex items-center gap-1.5 px-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400">
-                      {m.agent}
-                    </span>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
-          <div className="h-32 md:h-40 shrink-0" />
+            );
+          })}
         </div>
       </div>
 
@@ -196,16 +211,17 @@ export default function Chat() {
   );
 }
 
-function ActionLog({ steps }: { steps: OrchestrationStep[] }) {
-  const [isOpen, setIsOpen] = useState(false);
+function ActionLog({ steps, forceOpen }: { steps: OrchestrationStep[], forceOpen?: boolean }) {
+  const [userOpened, setUserOpened] = useState(false);
+  const isOpen = forceOpen || userOpened;
 
   return (
     <div className="ml-2 mb-1">
       <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-indigo-500 transition-colors"
+        onClick={() => setUserOpened(!userOpened)}
+        className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-colors ${isOpen ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-500'}`}
       >
-        <Zap className="w-3 h-3" />
+        <Zap className={`w-3 h-3 ${forceOpen ? 'animate-pulse' : ''}`} />
         <span>{steps.length} Steps Taken</span>
         {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
       </button>

@@ -86,16 +86,14 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
 
       const assistantMessage = response.choices[0].message;
       
-      // 1. Final Synthesis
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-        // Stream the final response
+        // Stream the final response using proper OpenAI SDK types
         const stream = await poe.chat.completions.create({
           model: MODEL_NAME,
           messages: internalMessages,
           stream: true,
         });
 
-        // @ts-expect-error - OpenAI SDK stream types
         for await (const chunk of stream) {
           const content = chunk.choices[0]?.delta?.content || '';
           if (content) yield { type: 'chunk', text: content };
@@ -103,36 +101,33 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         return;
       }
 
-      // 2. Handle Tool Calls
       const toolCall = assistantMessage.tool_calls[0];
       if (toolCall.type === 'function') {
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
 
-        // Yield thought and action
         if (assistantMessage.content) {
           yield { type: 'thought', text: assistantMessage.content };
         }
         
         let agentName = "";
-        let actionDesc = "";
         if (fn.name === 'delegateToScheduler') {
           agentName = "scheduler";
-          actionDesc = `Requesting Scheduler: "${args.instruction}"`;
         } else if (fn.name === 'delegateToResearcher') {
           agentName = "researcher";
-          actionDesc = `Requesting Researcher: "${args.instruction}"`;
         }
 
         yield { type: 'agent', name: agentName };
-        yield { type: 'action', text: actionDesc };
+        yield { type: 'action', text: `Commanding ${agentName}: "${args.instruction}"` };
 
         const report = (await (fn.name === 'delegateToScheduler' 
           ? handleSchedulerRequest(args.instruction) 
           : handleResearcherRequest(args.instruction))) || "";
 
         yield { type: 'report', text: report };
-        yield { type: 'agent', name: 'main' }; // Switch back to main for next reasoning
+        yield { type: 'agent', name: 'main' }; 
+
+        lastAgentUsed = agentName;
 
         internalMessages.push(assistantMessage);
         internalMessages.push({
