@@ -1,3 +1,17 @@
+/* Make markdown tables horizontally scrollable */
+.markdown-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: separate;
+  border-spacing: 0;
+  max-width: 100%;
+}
+
+.markdown-content th, .markdown-content td {
+  white-space: nowrap;
+}
 @import "tailwindcss";
 
 /* Markdown Styling for Chat */
