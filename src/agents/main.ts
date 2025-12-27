@@ -48,7 +48,7 @@ export type ChatEvent =
   | { type: 'agent', name: string }
   | { type: 'thought', text: string }
   | { type: 'action', text: string }
-  | { type: 'report', text: string }
+  | { type: 'report', text: string, metadata?: Record<string, any> }
   | { type: 'chunk', text: string };
 
 /**
@@ -132,7 +132,24 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
           ? handleSchedulerRequest(args.instruction) 
           : handleResearcherRequest(args.instruction))) || "";
 
-        yield { type: 'report', text: report };
+        const metadata: Record<string, any> = {};
+        if (agentName === 'researcher') {
+          // Extract URLs from the report
+          const urlRegex = /(https?:\/\/[^\s\)]+)/g;
+          const urls = Array.from(new Set(report.match(urlRegex) || []));
+          if (urls.length > 0) {
+            metadata.urls = urls;
+          }
+        } else if (agentName === 'scheduler') {
+          // Extract potential event titles (quoted text)
+          const titleRegex = /"([^"]+)"/g;
+          const titles = Array.from(new Set(Array.from(report.matchAll(titleRegex)).map(m => m[1])));
+          if (titles.length > 0) {
+            metadata.titles = titles;
+          }
+        }
+
+        yield { type: 'report', text: report, metadata };
         yield { type: 'agent', name: 'main' }; 
 
         internalMessages.push(assistantMessage);
