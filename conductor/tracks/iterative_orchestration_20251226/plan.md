@@ -9,6 +9,6 @@ This plan outlines the steps to enable multi-round agent communication.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Core Loop Implementation' (Protocol in workflow.md) 4c336e8
 
 ## Phase 2: Refinement & Testing
-- [ ] Task: Test a complex multi-agent scenario (e.g., Search then Schedule)
-- [ ] Task: Ensure streaming correctly handles the final loop output
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Refinement & Testing' (Protocol in workflow.md)
+- [x] Task: Test a complex multi-agent scenario (e.g., Search then Schedule)
+- [x] Task: Ensure streaming correctly handles the final loop output
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Refinement & Testing' (Protocol in workflow.md)

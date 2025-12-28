@@ -111,3 +111,7 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Implement Sleep-time Compute for Memory Agent
 *Link: [./conductor/tracks/sleep_time_memory_20251227/](./conductor/tracks/sleep_time_memory_20251227/)*
+---
+
+## [x] Track: Main Agent as Sole Voice
+*Link: [./conductor/tracks/main_agent_sole_voice_20251226/](./conductor/tracks/main_agent_sole_voice_20251226/)*
