@@ -115,3 +115,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Main Agent as Sole Voice
 *Link: [./conductor/tracks/main_agent_sole_voice_20251226/](./conductor/tracks/main_agent_sole_voice_20251226/)*
+
+---
+
+## [ ] Track: Sidebar Session History with Neon DB
+*Link: [./conductor/tracks/sidebar_session_history_20251228/](./conductor/tracks/sidebar_session_history_20251228/)*
