@@ -36,3 +36,4 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Temporal Awareness:** The system is now fully aware of the user's local time (UTC+7, Vietnam Time), ensuring accurate scheduling and context.
 - **Database-Backed Sessions:** Chat history is now persisted in a Neon PostgreSQL database using Drizzle ORM, supporting full CRUD operations.
 - **Dynamic Session Management:** The application now supports multiple chat threads with auto-titling, real-time search, and manual rename/delete capabilities.
+- **Modular Component Architecture:** The application UI is now built using a feature-based decomposition strategy, separating generic atoms from smart, logic-bearing feature components for enhanced maintainability.

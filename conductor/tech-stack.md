@@ -6,9 +6,13 @@ This document outlines the core technologies and architectural choices for the m
 - **Next.js:** A React-based framework for building a fast, modern web application.
 - **Vercel:** The primary deployment and hosting platform, optimized for Next.js.
 - **TypeScript:** Ensuring type safety across the entire codebase.
+- **React Context API:** Used for lightweight global state management of chat and session data.
 
 ## Backend & Logic
 - **Modular Architecture:** A clean separation of concerns:
+    - `src/app/(app)`: Dedicated Next.js Route Group for core application logic and persistent UI.
+    - `src/context/`: Centralized state management using React Context.
+    - `src/components/ui/`: Atomic, stateless UI components.
     - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, Memory, and Rename agents.
     - `prompts/`: Hybrid XML/Markdown prompt architecture optimized for LLM processing and clear section boundaries.
     - `tools/`: Independent modules for external API interactions.
