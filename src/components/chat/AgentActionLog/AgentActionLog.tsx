@@ -43,16 +43,16 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
 
 function CollapsibleStep({ step }: { step: OrchestrationStep }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const isDelegation = step.text.includes('➔');
   const isConsulter = step.text.toLowerCase().includes('consulter');
+  const isSearch = step.text.toLowerCase().includes('search') || step.text.toLowerCase().includes('brave') || step.text.toLowerCase().includes('tavily');
   const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
 
   const config = {
     thought: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50' },
     action: { 
-      icon: isConsulter ? MessageSquare : (isDelegation ? Zap : Search), 
-      color: isConsulter ? 'text-purple-600' : (isDelegation ? 'text-indigo-600' : 'text-blue-500'), 
-      bg: isConsulter ? 'bg-purple-50' : (isDelegation ? 'bg-indigo-50' : 'bg-blue-50') 
+      icon: isConsulter ? MessageSquare : (isSearch ? Search : Zap), 
+      color: isConsulter ? 'text-purple-600' : (isSearch ? 'text-blue-500' : 'text-indigo-600'), 
+      bg: isConsulter ? 'bg-purple-50' : (isSearch ? 'bg-blue-50' : 'bg-indigo-50') 
     },
     report: { 
       icon: isConsulter ? MessageSquare : FileText, 

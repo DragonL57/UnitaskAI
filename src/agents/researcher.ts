@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _tavilySearch, readWebpage as _readWebpage } from '@/tools/tavily';
-import { search as _ddgSearch } from '@/tools/duckduckgo';
+import { search as _braveSearch } from '@/tools/brave-search';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 import { getVietnamTime } from '@/lib/utils';
 
@@ -41,7 +41,7 @@ export interface ResearcherStep {
   query?: string;
   url?: string;
   results?: { title: string; url: string }[];
-  engine?: 'duckduckgo' | 'tavily';
+  engine?: 'brave' | 'tavily';
   status?: 'success' | 'fallback' | 'retry' | 'error';
 }
 
@@ -59,29 +59,28 @@ export interface ResearcherResponse {
  */
 async function resilientSearch(query: string, steps: ResearcherStep[]) {
   let toolResult;
-  let currentEngine: 'duckduckgo' | 'tavily' = 'duckduckgo';
+  let currentEngine: 'brave' | 'tavily' = 'brave';
   let status: 'success' | 'fallback' | 'retry' | 'error' = 'success';
 
   try {
-    console.log(`[Researcher] Attempting search with DuckDuckGo: ${query}`);
-    toolResult = await _ddgSearch(query);
+    console.log(`[Researcher] Attempting search with Brave: ${query}`);
+    toolResult = await _braveSearch(query);
 
     if (toolResult.no_results) {
-      console.log(`[Researcher] DuckDuckGo returned no results. Retrying with simplified keywords...`);
-      // Simple keyword extraction: remove common words, keep nouns/proper nouns (naive)
+      console.log(`[Researcher] Brave returned no results. Retrying with simplified keywords...`);
       const simpleQuery = query.split(' ').filter(word => word.length > 3).join(' ') || query;
-      toolResult = await _ddgSearch(simpleQuery);
+      toolResult = await _braveSearch(simpleQuery);
       status = 'retry';
 
       if (toolResult.no_results) {
-        console.log(`[Researcher] DuckDuckGo retry also failed. Falling back to Tavily...`);
+        console.log(`[Researcher] Brave retry also failed. Falling back to Tavily...`);
         toolResult = await _tavilySearch(query);
         currentEngine = 'tavily';
         status = 'fallback';
       }
     }
   } catch (error) {
-    console.error(`[Researcher] DuckDuckGo error:`, error);
+    console.error(`[Researcher] Brave Search error:`, error);
     console.log(`[Researcher] Falling back to Tavily due to error...`);
     try {
       toolResult = await _tavilySearch(query);
@@ -91,7 +90,7 @@ async function resilientSearch(query: string, steps: ResearcherStep[]) {
       console.error(`[Researcher] Tavily also failed:`, tavilyError);
       status = 'error';
       return {
-        error: "Both DuckDuckGo and Tavily search tools failed.",
+        error: "Both Brave and Tavily search tools failed.",
         results: [],
         status: 'error'
       };
