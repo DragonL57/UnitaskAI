@@ -4,7 +4,7 @@ This plan outlines the steps to refactor the search tool with DuckDuckGo primary
 
 ## Phase 1: Search Tool Refactor (Resilient Search)
 - [x] Task: Research and select a reliable Node.js DuckDuckGo library (e.g., `ddgs` or `duck-duck-scrape`) 3fd5dea
-- [ ] Task: Implement `src/tools/duckduckgo.ts` with basic search functionality
+- [x] Task: Implement `src/tools/duckduckgo.ts` with basic search functionality c0d8d3a
 - [ ] Task: Refactor `src/agents/researcher.ts` to use DuckDuckGo as the primary engine
 - [ ] Task: Implement retry logic in `Researcher` for "no results" (simplified keywords)
 - [ ] Task: Implement fallback logic in `Researcher` to use Tavily if DuckDuckGo fails
