@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, Zap, ChevronUp, ChevronDown, Search, FileText, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -8,29 +8,18 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
 import { getMessages, createSession } from '@/actions/sessions';
-
-interface OrchestrationStep {
-  type: 'thought' | 'action' | 'report';
-  text: string;
-  metadata?: {
-    urls?: string[];
-    titles?: string[];
-  };
-}
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  agent?: 'scheduler' | 'researcher' | 'memory' | 'main';
-  steps?: OrchestrationStep[];
-}
+import { useChat, Message, OrchestrationStep } from '@/context/ChatContext';
 
 export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, onNewMessage?: () => void }) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { 
+    messages, 
+    setMessages, 
+    isLoading, 
+    setIsLoading, 
+    refreshSessions 
+  } = useChat();
   
+  const [input, setInput] = React.useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const router = useRouter();
@@ -54,7 +43,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
     } else {
       setMessages([]);
     }
-  }, [sessionId]);
+  }, [sessionId, setMessages, setIsLoading]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -79,7 +68,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
     if (!currentSessionId) {
       const session = await createSession();
       currentSessionId = session.id;
-      // Navigate to the new session URL
       router.push(`/sessions/${session.id}`);
     }
 
@@ -134,22 +122,18 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                   // Logic to decide if we need a new bubble for chronological ordering
                   let needsNew = false;
                   
-                  // 1. Transition from steps to content
                   if (event.type === 'chunk' && lastMsg.steps && lastMsg.steps.length > 0) {
                     needsNew = true;
                   } 
-                  // 2. Transition from content to steps
                   else if ((event.type === 'thought' || event.type === 'action' || event.type === 'report') && lastMsg.content) {
                     needsNew = true;
                   }
-                  // 3. Agent change while current bubble is not empty
                   else if (event.type === 'agent' && event.name !== lastMsg.agent && (lastMsg.content || (lastMsg.steps && lastMsg.steps.length > 0))) {
                     needsNew = true;
                   }
 
                   if (needsNew) {
                     const newId = (Date.now() + Math.random()).toString();
-
                     const newMsg: Message = { 
                       id: newId, 
                       role: 'assistant', 
@@ -161,7 +145,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                     };
                     return [...prev, newMsg];
                   } else {
-                    // Update existing message WITHOUT mutation
                     return prev.map((m, idx) => {
                       if (idx !== prev.length - 1) return m;
                       
@@ -189,11 +172,8 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
         }
       }
 
-      // Refresh sidebar if callback provided
-      if (onNewMessage) {
-        onNewMessage();
-      }
-      window.dispatchEvent(new CustomEvent('refresh-sessions'));
+      if (onNewMessage) onNewMessage();
+      refreshSessions();
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
@@ -217,8 +197,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
         <div className="max-w-4xl mx-auto w-full p-4 md:p-6 space-y-4" ref={scrollRef}>
           {messages.map((m) => {
             const hasSteps = m.steps && m.steps.length > 0;
-            // Only show bubble if it has content OR if it's the current loading message and has NO steps yet
-            const shouldShowBubble = m.content || (!hasSteps && m.id === messages[messages.length - 1].id && isLoading);
+            const shouldShowBubble = m.content || (!hasSteps && messages.length > 0 && m.id === messages[messages.length - 1].id && isLoading);
 
             return (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-1 duration-200`}>
@@ -252,7 +231,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                     </div>
                   )}
 
-                  {/* Steps Log - Now below the bubble */}
                   {hasSteps && (
                     <ActionLog 
                       steps={m.steps!}
@@ -313,7 +291,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
 }
 
 function ActionLog({ steps, forceOpen }: { steps: OrchestrationStep[], forceOpen?: boolean }) {
-  const [userOpened, setUserOpened] = useState(false);
+  const [userOpened, setUserOpened] = React.useState(false);
   const isOpen = forceOpen || userOpened;
 
   return (
@@ -343,11 +321,10 @@ function ActionLog({ steps, forceOpen }: { steps: OrchestrationStep[], forceOpen
 }
 
 function CollapsibleStep({ step }: { step: OrchestrationStep }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const isDelegation = step.text.includes('➔');
   const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
 
-  // Icon and Color mapping
   const config = {
     thought: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50' },
     action: { 
@@ -359,13 +336,10 @@ function CollapsibleStep({ step }: { step: OrchestrationStep }) {
   }[step.type];
 
   const Icon = config.icon;
-
-  // Decide if we should allow expansion (if there's a long text or metadata)
   const isExpandable = step.text.length > 60 || hasMetadata || step.type === 'report';
 
   return (
     <div className="relative pl-6 py-1 group">
-      {/* Connector Line Connector */}
       <div className={`absolute left-[-5px] top-[14px] w-2 h-2 rounded-full border-2 bg-white transition-all z-10 ${ 
         isExpanded ? 'border-indigo-500 scale-110' : 'border-gray-200 group-hover:border-gray-400'
       }`} />
@@ -402,7 +376,6 @@ function CollapsibleStep({ step }: { step: OrchestrationStep }) {
 
         {isExpanded && (
           <div className="mt-2.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-200">
-            {/* Only show markdown if it's long, otherwise the header is enough */}
             {step.text.length > 60 && (
               <div className="text-[11px] text-gray-600 leading-relaxed pl-1 bg-white/50 p-2 rounded-lg border border-gray-100/50">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>

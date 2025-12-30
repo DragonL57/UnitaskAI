@@ -17,18 +17,17 @@ import {
 import { useRouter, usePathname } from 'next/navigation';
 import { getSessions, createSession, deleteSession, updateSessionTitle } from '@/actions/sessions';
 import { groupSessionsByDate } from '@/lib/utils';
-
-interface Session {
-  id: string;
-  title: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-}
+import { useChat, Session } from '@/context/ChatContext';
 
 export default function Sidebar() {
+  const { 
+    sessions, 
+    setSessions, 
+    refreshSessions 
+  } = useChat();
+
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [allSessions, setAllSessions] = useState<Session[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -41,11 +40,11 @@ export default function Sidebar() {
   const loadSessions = useCallback(async () => {
     try {
       const data = await getSessions();
-      setAllSessions(data as Session[]);
+      setSessions(data as Session[]);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     }
-  }, []);
+  }, [setSessions]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -59,7 +58,6 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSessions();
 
     const handleRefresh = () => loadSessions();
@@ -68,7 +66,6 @@ export default function Sidebar() {
   }, [loadSessions]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSessions();
   }, [pathname, loadSessions]);
 
@@ -87,7 +84,7 @@ export default function Sidebar() {
     router.push(`/sessions/${session.id}`);
     router.refresh();
     if (isMobile) setIsOpen(false);
-    loadSessions();
+    refreshSessions();
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -97,7 +94,7 @@ export default function Sidebar() {
       if (pathname === `/sessions/${id}`) {
         router.push('/');
       }
-      loadSessions();
+      refreshSessions();
       setMenuOpenId(null);
     }
   };
@@ -113,11 +110,11 @@ export default function Sidebar() {
     if (editTitle.trim()) {
       await updateSessionTitle(id, editTitle.trim());
       setEditingSessionId(null);
-      loadSessions();
+      refreshSessions();
     }
   };
 
-  const filteredSessions = allSessions.filter(s => 
+  const filteredSessions = sessions.filter(s => 
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
