@@ -14,10 +14,10 @@ This plan outlines the steps to refactor the application into a modular, feature
 - [x] Task: Refactor `src/components/Chat.tsx` and `src/components/Sidebar.tsx` to consume state from `ChatContext` instead of local state/server actions directly f651e24
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: State Management (Context API)' (Protocol in workflow.md)
 
-## Phase 3: Component Decomposition - UI Atoms
-- [ ] Task: Create `src/components/ui` directory and extract basic atoms (e.g., `Button`, `Input`, `IconButton`)
-- [ ] Task: Standardize atoms to use named exports and consistent prop patterns
-- [ ] Task: Replace direct Tailwind styling in feature components with these new atoms where applicable
+## Phase 3: Component Decomposition - UI Atoms [checkpoint: 3fd13d3]
+- [x] Task: Create `src/components/ui` directory and extract basic atoms (e.g., `Button`, `Input`, `IconButton`) a8374b2
+- [x] Task: Standardize atoms to use named exports and consistent prop patterns a8374b2
+- [x] Task: Replace direct Tailwind styling in feature components with these new atoms where applicable 6a5664a
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Component Decomposition - UI Atoms' (Protocol in workflow.md)
 
 ## Phase 4: Component Decomposition - Sidebar & Chat Features
