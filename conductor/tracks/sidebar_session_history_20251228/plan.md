@@ -19,7 +19,7 @@ This plan outlines the steps to implement persistent chat session history using 
 ## Phase 3: Session Management Features
 - [x] Task: Implement the Session History List with chronological grouping 6cf3619
 - [x] Task: Add Auto-Titling logic using LLM after the first exchange 852f47d
-- [ ] Task: Implement Search, Rename, and Delete functionality in the Sidebar
+- [x] Task: Implement Search, Rename, and Delete functionality in the Sidebar 640c951
 - [ ] Task: Ensure session sorting (active session moves to top)
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Session Management Features' (Protocol in workflow.md)
 
