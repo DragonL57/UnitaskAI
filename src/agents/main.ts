@@ -3,7 +3,8 @@ import { poe, REASONING_MODEL_NAME } from '@/lib/poe';
 import { readMemory, evaluateAndStore } from '@/agents/memory';
 import { incrementStepCounter, shouldRunSleepTimeAgent } from './memoryAgentState';
 import { handleSchedulerRequest } from '@/agents/scheduler';
-import { handleResearcherRequest } from '@/agents/researcher';
+import { handleResearcherRequest, ResearcherStep } from '@/agents/researcher';
+import { handleConsulterRequest } from '@/agents/consulter';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
 import { getVietnamTime } from '@/lib/utils';
 
@@ -33,6 +34,20 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
           instruction: { type: 'string', description: 'The refined command for the Research Specialist.' },
         },
         required: ['instruction'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'delegateToConsulter',
+      description: 'Send a draft answer to the Consulter Specialist for critique and quality control.',
+      parameters: {
+        type: 'object',
+        properties: {
+          draft_answer: { type: 'string', description: 'The complete draft answer you intend to send to the user.' },
+        },
+        required: ['draft_answer'],
       },
     },
   },
@@ -124,18 +139,34 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
           agentName = "scheduler";
         } else if (fn.name === 'delegateToResearcher') {
           agentName = "researcher";
+        } else if (fn.name === 'delegateToConsulter') {
+          agentName = "consulter";
         }
 
         yield { type: 'agent', name: agentName };
-        yield { type: 'action', text: `Main ➔ ${agentName.charAt(0).toUpperCase() + agentName.slice(1)}: "${args.instruction}"` };
+        
+        let subResponse: string | { report: string; steps?: ResearcherStep[] };
+        let actionText = "";
 
-        const subResponse = await (fn.name === 'delegateToScheduler' 
-          ? handleSchedulerRequest(args.instruction) 
-          : handleResearcherRequest(args.instruction));
+        if (agentName === 'consulter') {
+          actionText = `Main ➔ Consulter: "Critique this draft..."`;
+          // Execute Consulter logic
+          const critique = await handleConsulterRequest(userQuery, args.draft_answer, internalMessages);
+          if (critique.status === 'critique') {
+            subResponse = `CRITIQUE: ${critique.feedback}`;
+          } else {
+            subResponse = "APPROVED: The draft is good.";
+          }
+        } else {
+          actionText = `Main ➔ ${agentName.charAt(0).toUpperCase() + agentName.slice(1)}: "${args.instruction}"`;
+          subResponse = await (fn.name === 'delegateToScheduler' 
+            ? handleSchedulerRequest(args.instruction) 
+            : handleResearcherRequest(args.instruction));
+        }
+        
+        yield { type: 'action', text: actionText };
 
-        if (typeof subResponse !== 'string') {
-          // Yield internal steps if they exist
-          if (subResponse.steps) {
+        if (typeof subResponse !== 'string' && subResponse.steps) {
             for (const s of subResponse.steps) {
               if (s.type === 'search') {
                 const statusText = s.status && s.status !== 'success' ? ` [${s.status.toUpperCase()}${s.engine ? `: ${s.engine}` : ''}]` : '';
@@ -143,8 +174,8 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
                   type: 'action', 
                   text: `Web Search: "${s.query}"${statusText}`, 
                   metadata: { 
-                    urls: s.results?.map(r => r.url), 
-                    titles: s.results?.map(r => r.title),
+                    urls: s.results?.map((r: { url: string }) => r.url), 
+                    titles: s.results?.map((r: { title: string }) => r.title),
                     engine: s.engine ? [s.engine] : undefined,
                     status: s.status ? [s.status] : undefined
                   } 
@@ -153,7 +184,6 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
                 yield { type: 'action', text: `Reading Webpage: ${s.url}` };
               }
             }
-          }
         }
 
         const report = typeof subResponse === 'string' ? subResponse : subResponse.report;
