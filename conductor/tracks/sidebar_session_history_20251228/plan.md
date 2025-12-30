@@ -16,7 +16,7 @@ This plan outlines the steps to implement persistent chat session history using 
 - [x] Task: Integrate Sidebar into the main layout 3aa9efe
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Foundation & Routing' (Protocol in workflow.md)
 
-## Phase 3: Session Management Features
+## Phase 3: Session Management Features [checkpoint: f2c208c]
 - [x] Task: Implement the Session History List with chronological grouping 6cf3619
 - [x] Task: Add Auto-Titling logic using LLM after the first exchange 852f47d
 - [x] Task: Implement Search, Rename, and Delete functionality in the Sidebar 640c951
