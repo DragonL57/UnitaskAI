@@ -10,8 +10,8 @@ This plan outlines the steps to implement persistent chat session history using 
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Setup' (Protocol in workflow.md)
 
 ## Phase 2: UI Foundation & Routing
-- [ ] Task: Set up Next.js dynamic routing for `/sessions/[id]`
-- [ ] Task: Refactor `src/app/page.tsx` and `src/components/Chat.tsx` to support session-based loading
+- [x] Task: Set up Next.js dynamic routing for `/sessions/[id]` 2049e82
+- [x] Task: Refactor `src/app/page.tsx` and `src/components/Chat.tsx` to support session-based loading 2049e82
 - [ ] Task: Implement the Sidebar component structure (collapsible, mobile-first overlay)
 - [ ] Task: Integrate Sidebar into the main layout
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Foundation & Routing' (Protocol in workflow.md)
