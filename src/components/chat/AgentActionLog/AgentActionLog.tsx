@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Zap, Search, FileText, ChevronUp, ChevronDown } from 'lucide-react';
+import { Zap, Search, FileText, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { OrchestrationStep } from '@/context/ChatContext';
@@ -44,16 +44,21 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
 function CollapsibleStep({ step }: { step: OrchestrationStep }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDelegation = step.text.includes('➔');
+  const isConsulter = step.text.toLowerCase().includes('consulter');
   const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
 
   const config = {
     thought: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50' },
     action: { 
-      icon: isDelegation ? Zap : Search, 
-      color: isDelegation ? 'text-indigo-600' : 'text-blue-500', 
-      bg: isDelegation ? 'bg-indigo-50' : 'bg-blue-50' 
+      icon: isConsulter ? MessageSquare : (isDelegation ? Zap : Search), 
+      color: isConsulter ? 'text-purple-600' : (isDelegation ? 'text-indigo-600' : 'text-blue-500'), 
+      bg: isConsulter ? 'bg-purple-50' : (isDelegation ? 'bg-indigo-50' : 'bg-blue-50') 
     },
-    report: { icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+    report: { 
+      icon: isConsulter ? MessageSquare : FileText, 
+      color: isConsulter ? 'text-purple-600' : 'text-emerald-600', 
+      bg: isConsulter ? 'bg-purple-50' : 'bg-emerald-50' 
+    }
   }[step.type];
 
   const Icon = config.icon;
