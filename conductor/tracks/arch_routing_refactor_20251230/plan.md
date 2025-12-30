@@ -20,10 +20,10 @@ This plan outlines the steps to refactor the application into a modular, feature
 - [x] Task: Replace direct Tailwind styling in feature components with these new atoms where applicable 6a5664a
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Component Decomposition - UI Atoms' (Protocol in workflow.md)
 
-## Phase 4: Component Decomposition - Sidebar & Chat Features
-- [ ] Task: Refactor Sidebar into `src/components/sidebar/` sub-components (`SessionList`, `SessionItem`, `NewChatButton`, `SearchBox`)
-- [ ] Task: Refactor Chat into `src/components/chat/` sub-components (`MessageList`, `MessageItem`, `InputArea`, `AgentActionLog`)
-- [ ] Task: Implement the "Standardized File Pattern" (Folder > Component file + index.ts) for all refactored components
-- [ ] Task: Final cleanup: Remove old monolithic `Sidebar.tsx` and `Chat.tsx` (or repurpose them as feature containers)
-- [ ] Task: Run project-wide linting and type checking to ensure zero regressions
+## Phase 4: Component Decomposition - Sidebar & Chat Features [checkpoint: 7db2000]
+- [x] Task: Refactor Sidebar into `src/components/sidebar/` sub-components (`SessionList`, `SessionItem`, `NewChatButton`, `SearchBox`) fd97e26
+- [x] Task: Refactor Chat into `src/components/chat/` sub-components (`MessageList`, `MessageItem`, `InputArea`, `AgentActionLog`) ec4c2bb
+- [x] Task: Implement the "Standardized File Pattern" (Folder > Component file + index.ts) for all refactored components ec4c2bb
+- [x] Task: Final cleanup: Remove old monolithic `Sidebar.tsx` and `Chat.tsx` (or repurpose them as feature containers) ec4c2bb
+- [x] Task: Run project-wide linting and type checking to ensure zero regressions ec4c2bb
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Component Decomposition - Sidebar & Chat Features' (Protocol in workflow.md)
