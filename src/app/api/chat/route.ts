@@ -1,6 +1,7 @@
 import { chat } from '@/agents/main';
 import { NextRequest } from 'next/server';
 import { saveMessage } from '@/actions/sessions';
+import { generateAutoTitle } from '@/actions/auto-title';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,6 +30,12 @@ export async function POST(req: NextRequest) {
 
           if (sessionId && fullAssistantContent) {
             await saveMessage(sessionId, 'assistant', fullAssistantContent);
+            
+            // Trigger auto-titling if this was the first exchange (history empty or just 1 message)
+            if (!history || history.length === 0) {
+              // We don't await this to avoid blocking the stream completion, but it's okay here
+              await generateAutoTitle(sessionId, message);
+            }
           }
         } catch (e) {
           console.error('API Streaming error:', e);
