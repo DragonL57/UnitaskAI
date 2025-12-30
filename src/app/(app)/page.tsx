@@ -5,6 +5,7 @@ import Chat from '@/components/Chat';
 import MemoryManager from '@/components/MemoryManager';
 import Modal from '@/components/Modal';
 import { Database, Sparkles } from 'lucide-react';
+import { IconButton } from '@/components/ui/IconButton';
 
 export default function Home({ sessionId }: { sessionId?: string }) {
   const [isMemoryOpen, setIsMemoryOpen] = useState(false);
@@ -20,13 +21,12 @@ export default function Home({ sessionId }: { sessionId?: string }) {
           <h1 className="text-lg font-black text-gray-900 tracking-tighter">Unitask AI</h1>
         </div>
         
-        <button
+        <IconButton
           onClick={() => setIsMemoryOpen(true)}
-          className="flex items-center justify-center w-9 h-9 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-amber-500 rounded-xl border border-gray-100 transition-all active:scale-95 shadow-sm"
+          variant="secondary"
+          icon={<Database className="w-4 h-4" />}
           title="Open Memory"
-        >
-          <Database className="w-4 h-4" />
-        </button>
+        />
       </header>
 
       {/* Main Chat Area - Fills remaining space exactly */}

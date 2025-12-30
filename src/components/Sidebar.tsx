@@ -18,6 +18,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { getSessions, createSession, deleteSession, updateSessionTitle } from '@/actions/sessions';
 import { groupSessionsByDate } from '@/lib/utils';
 import { useChat, Session } from '@/context/ChatContext';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Input } from '@/components/ui/Input';
 
 export default function Sidebar() {
   const { 
@@ -141,33 +144,31 @@ export default function Sidebar() {
         <div className="p-4 flex flex-col h-full w-72">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <button
+            <Button
               onClick={handleNewChat}
-              className="flex-1 flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-100 text-gray-700 rounded-xl border border-gray-200 transition-all active:scale-95 text-sm font-semibold shadow-sm"
+              variant="secondary"
+              className="flex-1"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 mr-2" />
               New Chat
-            </button>
+            </Button>
             {!isMobile && (
-              <button
+              <IconButton
                 onClick={() => setIsOpen(false)}
-                className="ml-2 p-2.5 hover:bg-gray-200 text-gray-400 rounded-xl transition-colors"
+                icon={<PanelLeftClose className="w-4 h-4" />}
                 title="Close Sidebar"
-              >
-                <PanelLeftClose className="w-4 h-4" />
-              </button>
+                className="ml-2"
+              />
             )}
           </div>
 
           {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text"
+          <div className="mb-4">
+            <Input 
               placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100/50 border-transparent focus:bg-white focus:border-indigo-100 rounded-lg text-xs outline-none transition-all"
+              icon={<Search className="w-4 h-4" />}
             />
           </div>
 
@@ -281,15 +282,12 @@ export default function Sidebar() {
 
       {/* Floating Toggle Button (when closed or on mobile) */}
       {(!isOpen || isMobile) && (
-        <button
+        <IconButton
           onClick={() => setIsOpen(true)}
-          className={`
-            fixed top-2.5 left-4 z-30 p-2.5 bg-white border border-gray-100 text-gray-400 hover:text-gray-600 rounded-xl shadow-sm transition-all hover:bg-gray-50
-            ${isMobile && isOpen ? 'hidden' : 'block'}
-          `}
-        >
-          <PanelLeftOpen className="w-4 h-4" />
-        </button>
+          variant="outline"
+          icon={<PanelLeftOpen className="w-4 h-4" />}
+          className={`fixed top-2.5 left-4 z-30 ${isMobile && isOpen ? 'hidden' : ''}`}
+        />
       )}
     </>
   );

@@ -9,6 +9,7 @@ import rehypeRaw from 'rehype-raw';
 
 import { getMessages, createSession, getSession } from '@/actions/sessions';
 import { useChat, Message, OrchestrationStep } from '@/context/ChatContext';
+import { IconButton } from '@/components/ui/IconButton';
 
 export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, onNewMessage?: () => void }) {
   const { 
@@ -29,7 +30,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
       setIsLoading(true);
       getSession(sessionId).then((session) => {
         if (!session) {
-          // Session not found, redirect to root
           router.push('/');
           setIsLoading(false);
           return;
@@ -73,7 +73,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
 
     let currentSessionId = sessionId;
 
-    // Create session if it doesn't exist
     if (!currentSessionId) {
       const session = await createSession();
       currentSessionId = session.id;
@@ -128,7 +127,6 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                 setMessages(prev => {
                   const lastMsg = prev[prev.length - 1];
                   
-                  // Logic to decide if we need a new bubble for chronological ordering
                   let needsNew = false;
                   
                   if (event.type === 'chunk' && lastMsg.steps && lastMsg.steps.length > 0) {
@@ -278,20 +276,20 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
             />
           </div>
           {isLoading ? (
-            <button
+            <IconButton
               onClick={handleStop}
+              variant="ghost"
+              icon={<Square className="w-5 h-5 fill-current" />}
               className="mb-1 w-12 h-12 bg-gray-800 hover:bg-gray-900 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
-            >
-              <Square className="w-5 h-5 fill-current" />
-            </button>
+            />
           ) : (
-            <button
+            <IconButton
               onClick={handleSend}
               disabled={!input.trim()}
+              variant="ghost"
+              icon={<Send className="w-5 h-5 ml-0.5" />}
               className="mb-1 w-12 h-12 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-100 disabled:text-gray-300 text-white rounded-full flex items-center justify-center transition-all shadow-lg active:scale-95 shrink-0"
-            >
-              <Send className="w-5 h-5 ml-0.5" />
-            </button>
+            />
           )}
         </div>
       </div>
@@ -357,7 +355,7 @@ function CollapsibleStep({ step }: { step: OrchestrationStep }) {
         isExpanded 
           ? 'bg-gray-50/30 border-gray-100 p-2.5' 
           : 'bg-transparent border-transparent hover:bg-gray-50/50 px-2 py-1'
-      }`}>
+      }`}> 
         <button 
           onClick={() => isExpandable && setIsExpanded(!isExpanded)}
           disabled={!isExpandable}
