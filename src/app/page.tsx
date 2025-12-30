@@ -6,7 +6,7 @@ import MemoryManager from '@/components/MemoryManager';
 import Modal from '@/components/Modal';
 import { Database, Sparkles } from 'lucide-react';
 
-export default function Home() {
+export default function Home({ sessionId }: { sessionId?: string }) {
   const [isMemoryOpen, setIsMemoryOpen] = useState(false);
 
   return (
@@ -31,7 +31,7 @@ export default function Home() {
 
       {/* Main Chat Area - Fills remaining space exactly */}
       <div className="flex-1 min-h-0 w-full flex flex-col">
-        <Chat />
+        <Chat sessionId={sessionId} />
       </div>
 
       {/* Memory Modal */}

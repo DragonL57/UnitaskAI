@@ -6,6 +6,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
+import { getMessages, saveMessage } from '@/actions/sessions';
+
 interface OrchestrationStep {
   type: 'thought' | 'action' | 'report';
   text: string;
@@ -23,7 +25,7 @@ interface Message {
   steps?: OrchestrationStep[];
 }
 
-export default function Chat() {
+export default function Chat({ sessionId }: { sessionId?: string }) {
   const [messages, setMessages] = useState<Message[]>([
     { id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }
   ]);
@@ -32,6 +34,27 @@ export default function Chat() {
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (sessionId) {
+      setIsLoading(true);
+      getMessages(sessionId).then((dbMessages) => {
+        if (dbMessages && dbMessages.length > 0) {
+          setMessages(dbMessages.map(m => ({
+            id: m.id,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            agent: 'main' as const // Agent info isn't stored in DB yet, defaulting to main
+          })).reverse());
+        } else {
+          setMessages([{ id: '1', role: 'assistant', content: 'Hello! This is a new session. How can I help you?', agent: 'main' }]);
+        }
+        setIsLoading(false);
+      });
+    } else {
+      setMessages([{ id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }]);
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,6 +78,12 @@ export default function Chat() {
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Save user message to DB if session exists
+    if (sessionId) {
+      await saveMessage(sessionId, 'user', input);
+    }
+
     setInput('');
     setIsLoading(true);
 
@@ -80,6 +109,7 @@ export default function Chat() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
+      let fullAssistantContent = '';
 
       if (!reader) throw new Error('No reader found');
 
@@ -116,6 +146,8 @@ export default function Chat() {
 
                   if (needsNew) {
                     const newId = (Date.now() + Math.random()).toString();
+                    if (event.type === 'chunk') fullAssistantContent += event.text;
+
                     const newMsg: Message = { 
                       id: newId, 
                       role: 'assistant', 
@@ -142,6 +174,7 @@ export default function Chat() {
                         }];
                       } else if (event.type === 'chunk') {
                         updated.content = m.content + event.text;
+                        fullAssistantContent += event.text;
                       }
                       return updated;
                     });
@@ -153,6 +186,11 @@ export default function Chat() {
             }
           }
         }
+      }
+
+      // Save assistant message to DB if session exists
+      if (sessionId && fullAssistantContent) {
+        await saveMessage(sessionId, 'assistant', fullAssistantContent);
       }
 
     } catch (error) {
