@@ -128,7 +128,7 @@ export default function Sidebar() {
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity"
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -136,9 +136,9 @@ export default function Sidebar() {
       {/* Sidebar Container */}
       <aside 
         className={`
-          ${isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'}
-          ${isOpen ? 'w-72' : 'w-0'}
-          h-full bg-gray-50 border-r border-gray-100 flex flex-col transition-all duration-300 ease-in-out overflow-hidden
+          ${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'relative border-r border-gray-100'}
+          ${isOpen ? 'w-72 translate-x-0' : isMobile ? '-translate-x-full w-72' : 'w-0 translate-x-0'}
+          h-full bg-gray-50 flex flex-col transition-all duration-300 ease-out overflow-hidden
         `}
       >
         <div className="p-4 flex flex-col h-full w-72">
