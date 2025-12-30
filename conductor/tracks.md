@@ -118,5 +118,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Sidebar Session History with Neon DB
+## [~] Track: Sidebar Session History with Neon DB
 *Link: [./conductor/tracks/sidebar_session_history_20251228/](./conductor/tracks/sidebar_session_history_20251228/)*
