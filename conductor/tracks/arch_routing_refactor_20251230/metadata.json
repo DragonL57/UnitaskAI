@@ -1,0 +1,8 @@
+{
+  "track_id": "arch_routing_refactor_20251230",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-30T16:57:00Z",
+  "updated_at": "2025-12-30T16:57:00Z",
+  "description": "Refactor the routing and file architecture for expansion and future feature additions, implementing feature-based folders, decomposition of monolithic components, and a central state management pattern."
+}

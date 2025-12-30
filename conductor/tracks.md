@@ -120,3 +120,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Sidebar Session History with Neon DB
 *Link: [./conductor/tracks/sidebar_session_history_20251228/](./conductor/tracks/sidebar_session_history_20251228/)*
+
+---
+
+## [ ] Track: Project Architecture & Routing Refactor
+*Link: [./conductor/tracks/arch_routing_refactor_20251230/](./conductor/tracks/arch_routing_refactor_20251230/)*
