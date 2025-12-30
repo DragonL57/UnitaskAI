@@ -1,11 +1,15 @@
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export async function search(query: string) {
   const apiKey = process.env.BRAVE_API_KEY;
   if (!apiKey) {
     console.error('[Brave Search] Missing BRAVE_API_KEY');
-    // Return empty results or throw to trigger fallback? 
-    // Throwing allows the researcher's fallback logic to kick in.
     throw new Error('Missing BRAVE_API_KEY');
   }
+
+  // Rate Limiting: Brave Free Tier allows ~1 request/second.
+  // We wait 1.1s before every request to ensure we don't hit 429.
+  await sleep(1100);
 
   console.log('[Brave Search] Searching with query:', query);
 

@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { search as _tavilySearch, readWebpage as _readWebpage } from '@/tools/tavily';
 import { search as _braveSearch } from '@/tools/brave-search';
+import { readWebpageWithFallback } from '@/tools/scraper';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 import { getVietnamTime } from '@/lib/utils';
 
@@ -143,35 +144,48 @@ export async function handleResearcherRequest(instruction: string): Promise<Rese
         };
       }
 
-      for (const toolCall of assistantMessage.tool_calls) {
+      // Process only first 2 tool calls to prevent API flooding
+      const toolCallsToProcess = assistantMessage.tool_calls.slice(0, 2);
+      
+      for (const toolCall of toolCallsToProcess) {
         if (toolCall.type === 'function') {
           const functionName = toolCall.function.name;
           const functionArgs = JSON.parse(toolCall.function.arguments);
           console.log(`[Researcher Specialist] Round ${rounds}: Executing ${functionName}...`);
 
           let toolResult;
-          if (functionName === 'search') {
-            toolResult = await resilientSearch(functionArgs.query, steps);
-            
-            // If explicit error from resilientSearch, we should probably stop or report it
-            if (toolResult.status === 'error') {
-               return { 
-                 report: "ERROR: Search tool failure. Both DuckDuckGo and Tavily failed to retrieve results. Please answer based on internal knowledge if possible.", 
-                 steps 
-               };
+          try {
+            if (functionName === 'search') {
+              toolResult = await resilientSearch(functionArgs.query, steps);
+              
+              if (toolResult.status === 'error') {
+                 // Return the error to the agent context instead of crashing
+                 toolResult = { error: "Search failed. Please try a different query or use internal knowledge/previous results." };
+              }
+            } else if (functionName === 'readWebpage') {
+              try {
+                toolResult = await _readWebpage(functionArgs.url);
+              } catch (tavilyError: any) {
+                console.warn(`[Researcher] Tavily extraction failed, trying fallback scraper...`, tavilyError.message);
+                toolResult = await readWebpageWithFallback(functionArgs.url);
+              }
+              
+              steps.push({
+                type: 'read',
+                url: functionArgs.url
+              });
             }
-          } else if (functionName === 'readWebpage') {
-            toolResult = await _readWebpage(functionArgs.url);
-            steps.push({
-              type: 'read',
-              url: functionArgs.url
-            });
+          } catch (toolError: any) {
+            console.error(`[Researcher] Tool ${functionName} failed:`, toolError.message);
+            toolResult = { 
+              error: `Tool ${functionName} failed: ${toolError.message}. Use previous information if available.` 
+            };
           }
 
           internalMessages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult),
+            content: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult),
           });
         }
       }
