@@ -19,6 +19,10 @@ This document outlines the core technologies and architectural choices for the m
 - **Poe API:** Utilizing the Poe API with the `grok-4.1-fast-non-reasoning` model for all natural language processing tasks.
 - **OpenAI Client Library:** Leveraging the `openai` SDK configured with the Poe `baseURL` and `apiKey`.
 
+## Database
+- **Neon DB:** Serverless PostgreSQL for persistent storage of chat sessions and message history.
+- **Drizzle ORM:** TypeScript ORM for type-safe database interactions and schema management.
+
 ## External Integrations
 - **Google Calendar API:** Integrated via server-side modules for managing schedules.
 - **Tavily Search API:** Used for high-performance web searching and webpage content extraction.
