@@ -138,10 +138,16 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
           if (subResponse.steps) {
             for (const s of subResponse.steps) {
               if (s.type === 'search') {
+                const statusText = s.status && s.status !== 'success' ? ` [${s.status.toUpperCase()}${s.engine ? `: ${s.engine}` : ''}]` : '';
                 yield { 
                   type: 'action', 
-                  text: `Web Search: "${s.query}"`, 
-                  metadata: { urls: s.results?.map(r => r.url), titles: s.results?.map(r => r.title) } 
+                  text: `Web Search: "${s.query}"${statusText}`, 
+                  metadata: { 
+                    urls: s.results?.map(r => r.url), 
+                    titles: s.results?.map(r => r.title),
+                    engine: s.engine ? [s.engine] : undefined,
+                    status: s.status ? [s.status] : undefined
+                  } 
                 };
               } else if (s.type === 'read') {
                 yield { type: 'action', text: `Reading Webpage: ${s.url}` };
@@ -151,7 +157,13 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
         }
 
         const report = typeof subResponse === 'string' ? subResponse : subResponse.report;
-        yield { type: 'report', text: `${agentName.charAt(0).toUpperCase() + agentName.slice(1)} ➔ Main: "Report generated"` };
+        
+        // Check for explicit error reports from specialists
+        if (report.startsWith('ERROR:')) {
+           yield { type: 'report', text: `${agentName.charAt(0).toUpperCase() + agentName.slice(1)} ➔ Main: "FAILED: ${report.split('.')[0]}"` };
+        } else {
+           yield { type: 'report', text: `${agentName.charAt(0).toUpperCase() + agentName.slice(1)} ➔ Main: "Report generated"` };
+        }
         
         internalMessages.push(assistantMessage);
         internalMessages.push({
