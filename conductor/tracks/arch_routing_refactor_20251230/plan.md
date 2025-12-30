@@ -2,10 +2,10 @@
 
 This plan outlines the steps to refactor the application into a modular, feature-based architecture using Next.js Route Groups and the React Context API.
 
-## Phase 1: Infrastructure & Route Groups
-- [ ] Task: Create Next.js Route Group `(app)` and move existing routes into it
-- [ ] Task: Update `tsconfig.json` paths to ensure `@/components/*` and other aliases are correctly set up
-- [ ] Task: Verify that all existing routes (`/`, `/sessions/[id]`) still function correctly after the move
+## Phase 1: Infrastructure & Route Groups [checkpoint: a024fd4]
+- [x] Task: Create Next.js Route Group `(app)` and move existing routes into it b64711c
+- [x] Task: Update `tsconfig.json` paths to ensure `@/components/*` and other aliases are correctly set up d71b1fc
+- [x] Task: Verify that all existing routes (`/`, `/sessions/[id]`) still function correctly after the move d71b1fc
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Route Groups' (Protocol in workflow.md)
 
 ## Phase 2: State Management (Context API)
