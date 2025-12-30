@@ -13,14 +13,17 @@ This plan outlines the steps to refactor the search tool with DuckDuckGo primary
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Search Tool Refactor (Resilient Search)' (Protocol in workflow.md) 2345cba
 
 ## Phase 2: Consulter Agent Development
-- [ ] Task: Create `src/agents/consulter.ts` defining the agent's logic and persona
-- [ ] Task: Define the Consulter prompt in `src/prompts/consulter.ts` focusing on Completeness and Logic
-- [ ] Task: Implement the Consulter calling logic in the `main` agent (Draft -> Critique -> Refined)
-- [ ] Task: Ensure the Consulter receives the full conversation history and the draft answer
+- [x] Task: Create `src/agents/consulter.ts` defining the agent's logic and persona a0af617
+- [x] Task: Define the Consulter prompt in `src/prompts/consulter.ts` focusing on Completeness and Logic a0af617
+- [x] Task: Implement the Consulter calling logic in the `main` agent (Draft -> Critique -> Refined) 11b8603
+- [x] Task: Ensure the Consulter receives the full conversation history and the draft answer 11b8603
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Consulter Agent Development' (Protocol in workflow.md)
 
 ## Phase 3: UI Transparency & Integration
-- [ ] Task: Update the `AgentActionLog` or message item UI to display the "Draft" and "Critique" steps
-- [ ] Task: Ensure the final refined answer is displayed as the primary response
-- [ ] Task: Run project-wide linting and type checking to ensure zero regressions
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: UI Transparency & Integration' (Protocol in workflow.md)
+- [x] Task: Update the `AgentActionLog` or message item UI to display the "Draft" and "Critique" steps 9a3b141
+- [x] Task: Ensure the final refined answer is displayed as the primary response 11b8603
+- [x] Task: Run project-wide linting and type checking to ensure zero regressions VERIFIED
+## Phase 4: Switch to Brave Search API (Repair)
+- [x] Task: Create `src/tools/brave-search.ts` using Brave Web Search API b6c4f92
+- [x] Task: Refactor `src/agents/researcher.ts` to use Brave Search as primary engine fbf9117
+- [~] Task: Conductor - User Manual Verification 'Phase 4: Switch to Brave Search API' (Protocol in workflow.md)
