@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
-import { search as _search, readWebpage as _readWebpage } from '@/tools/tavily';
+import { search as _tavilySearch, readWebpage as _readWebpage } from '@/tools/tavily';
+import { search as _ddgSearch } from '@/tools/duckduckgo';
 import { RESEARCHER_PROMPT } from '@/prompts/researcher';
 import { getVietnamTime } from '@/lib/utils';
 
@@ -40,11 +41,72 @@ export interface ResearcherStep {
   query?: string;
   url?: string;
   results?: { title: string; url: string }[];
+  engine?: 'duckduckgo' | 'tavily';
+  status?: 'success' | 'fallback' | 'retry' | 'error';
 }
 
 export interface ResearcherResponse {
   report: string;
   steps: ResearcherStep[];
+}
+
+/**
+ * Handles a search request with resilience:
+ * 1. Tries DuckDuckGo.
+ * 2. If zero results, retries DDG with simplified keywords.
+ * 3. If DDG fails (error), falls back to Tavily.
+ * 4. If both fail, reports failure.
+ */
+async function resilientSearch(query: string, steps: ResearcherStep[]) {
+  let toolResult;
+  let currentEngine: 'duckduckgo' | 'tavily' = 'duckduckgo';
+  let status: 'success' | 'fallback' | 'retry' | 'error' = 'success';
+
+  try {
+    console.log(`[Researcher] Attempting search with DuckDuckGo: ${query}`);
+    toolResult = await _ddgSearch(query);
+
+    if (toolResult.no_results) {
+      console.log(`[Researcher] DuckDuckGo returned no results. Retrying with simplified keywords...`);
+      // Simple keyword extraction: remove common words, keep nouns/proper nouns (naive)
+      const simpleQuery = query.split(' ').filter(word => word.length > 3).join(' ') || query;
+      toolResult = await _ddgSearch(simpleQuery);
+      status = 'retry';
+
+      if (toolResult.no_results) {
+        console.log(`[Researcher] DuckDuckGo retry also failed. Falling back to Tavily...`);
+        toolResult = await _tavilySearch(query);
+        currentEngine = 'tavily';
+        status = 'fallback';
+      }
+    }
+  } catch (error) {
+    console.error(`[Researcher] DuckDuckGo error:`, error);
+    console.log(`[Researcher] Falling back to Tavily due to error...`);
+    try {
+      toolResult = await _tavilySearch(query);
+      currentEngine = 'tavily';
+      status = 'fallback';
+    } catch (tavilyError) {
+      console.error(`[Researcher] Tavily also failed:`, tavilyError);
+      status = 'error';
+      return {
+        error: "Both DuckDuckGo and Tavily search tools failed.",
+        results: [],
+        status: 'error'
+      };
+    }
+  }
+
+  steps.push({
+    type: 'search',
+    query,
+    engine: currentEngine,
+    status: status,
+    results: toolResult.results?.map((r: { title: string; url: string }) => ({ title: r.title, url: r.url }))
+  });
+
+  return toolResult;
 }
 
 export async function handleResearcherRequest(instruction: string): Promise<ResearcherResponse> {
@@ -90,12 +152,15 @@ export async function handleResearcherRequest(instruction: string): Promise<Rese
 
           let toolResult;
           if (functionName === 'search') {
-            toolResult = await _search(functionArgs.query);
-            steps.push({
-              type: 'search',
-              query: functionArgs.query,
-              results: toolResult.results?.map((r: { title: string; url: string }) => ({ title: r.title, url: r.url }))
-            });
+            toolResult = await resilientSearch(functionArgs.query, steps);
+            
+            // If explicit error from resilientSearch, we should probably stop or report it
+            if (toolResult.status === 'error') {
+               return { 
+                 report: "ERROR: Search tool failure. Both DuckDuckGo and Tavily failed to retrieve results. Please answer based on internal knowledge if possible.", 
+                 steps 
+               };
+            }
           } else if (functionName === 'readWebpage') {
             toolResult = await _readWebpage(functionArgs.url);
             steps.push({
@@ -115,6 +180,6 @@ export async function handleResearcherRequest(instruction: string): Promise<Rese
     return { report: "I reached my tool limit for this research task.", steps };
   } catch (error) {
     console.error('Researcher Specialist Error:', error);
-    return { report: "Report: Failed to complete research task.", steps };
+    return { report: "Report: Failed to complete research task due to an internal error.", steps };
   }
 }
