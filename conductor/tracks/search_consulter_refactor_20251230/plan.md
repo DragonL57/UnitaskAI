@@ -2,7 +2,7 @@
 
 This plan outlines the steps to refactor the search tool with DuckDuckGo primary and Tavily fallback, and to integrate a Consulter Agent for a refined "Critique Loop" response flow.
 
-## Phase 1: Search Tool Refactor (Resilient Search)
+## Phase 1: Search Tool Refactor (Resilient Search) [checkpoint: 2345cba]
 - [x] Task: Research and select a reliable Node.js DuckDuckGo library (e.g., `ddgs` or `duck-duck-scrape`) 3fd5dea
 - [x] Task: Implement `src/tools/duckduckgo.ts` with basic search functionality c0d8d3a
 - [x] Task: Refactor `src/agents/researcher.ts` to use DuckDuckGo as the primary engine 7881178
@@ -10,7 +10,7 @@ This plan outlines the steps to refactor the search tool with DuckDuckGo primary
 - [x] Task: Implement fallback logic in `Researcher` to use Tavily if DuckDuckGo fails 7881178
 - [x] Task: Update `Researcher` to report explicit failures back to the Main Agent 7881178
 - [x] Task: Update `src/agents/main.ts` to handle search tool failures by answering from internal knowledge 7ec5f96
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Search Tool Refactor (Resilient Search)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Search Tool Refactor (Resilient Search)' (Protocol in workflow.md) 2345cba
 
 ## Phase 2: Consulter Agent Development
 - [ ] Task: Create `src/agents/consulter.ts` defining the agent's logic and persona
