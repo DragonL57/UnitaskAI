@@ -5,7 +5,7 @@ This plan outlines the steps to implement persistent chat session history using 
 ## Phase 1: Database & Backend Setup
 - [x] Task: Initialize Neon DB and install dependencies (drizzle-orm, pg, @neondatabase/serverless) 8e9a2d8
 - [x] Task: Define Drizzle schema for `sessions` and `messages` 410a9e3
-- [ ] Task: Create database migration and push to Neon
+- [x] Task: Create database migration and push to Neon 0cc22ad
 - [ ] Task: Implement server actions for CRUD operations on sessions and messages
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Database & Backend Setup' (Protocol in workflow.md)
 
