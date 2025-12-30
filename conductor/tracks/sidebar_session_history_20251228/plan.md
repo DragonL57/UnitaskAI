@@ -17,7 +17,7 @@ This plan outlines the steps to implement persistent chat session history using 
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: UI Foundation & Routing' (Protocol in workflow.md)
 
 ## Phase 3: Session Management Features
-- [ ] Task: Implement the Session History List with chronological grouping
+- [x] Task: Implement the Session History List with chronological grouping 6cf3619
 - [ ] Task: Add Auto-Titling logic using LLM after the first exchange
 - [ ] Task: Implement Search, Rename, and Delete functionality in the Sidebar
 - [ ] Task: Ensure session sorting (active session moves to top)
