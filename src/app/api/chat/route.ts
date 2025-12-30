@@ -1,21 +1,34 @@
 import { chat } from '@/agents/main';
 import { NextRequest } from 'next/server';
+import { saveMessage } from '@/actions/sessions';
 
 export async function POST(req: NextRequest) {
   try {
-    const { message, history } = await req.json();
+    const { message, history, sessionId } = await req.json();
+
+    if (sessionId) {
+      await saveMessage(sessionId, 'user', message);
+    }
 
     const eventGenerator = chat(message, history);
 
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
+        let fullAssistantContent = '';
 
         try {
           for await (const event of eventGenerator) {
+            if (event.type === 'chunk') {
+              fullAssistantContent += event.text;
+            }
             // Encode the event as a special JSON-prefixed line
             controller.enqueue(encoder.encode(`__EVENT__:${JSON.stringify(event)}
 `));
+          }
+
+          if (sessionId && fullAssistantContent) {
+            await saveMessage(sessionId, 'assistant', fullAssistantContent);
           }
         } catch (e) {
           console.error('API Streaming error:', e);

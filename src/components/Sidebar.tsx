@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   PanelLeftClose, 
   PanelLeftOpen, 
@@ -8,18 +8,35 @@ import {
   MessageSquare, 
   Search, 
   MoreVertical, 
-  Trash2, 
-  Edit2,
   Settings
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { getSessions, createSession, deleteSession, updateSessionTitle } from '@/actions/sessions';
+import { useRouter, usePathname } from 'next/navigation';
+import { getSessions, createSession } from '@/actions/sessions';
+import { groupSessionsByDate } from '@/lib/utils';
+
+interface Session {
+  id: string;
+  title: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [groupedSessions, setGroupedSessions] = useState<Record<string, Session[]>>({});
   const router = useRouter();
+  const pathname = usePathname();
+
+  const loadSessions = useCallback(async () => {
+    try {
+      const data = await getSessions();
+      const grouped = groupSessionsByDate(data);
+      setGroupedSessions(grouped);
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -33,17 +50,23 @@ export default function Sidebar() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadSessions();
-  }, []);
 
-  const loadSessions = async () => {
-    const data = await getSessions();
-    setSessions(data);
-  };
+    const handleRefresh = () => loadSessions();
+    window.addEventListener('refresh-sessions', handleRefresh);
+    return () => window.removeEventListener('refresh-sessions', handleRefresh);
+  }, [loadSessions]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadSessions();
+  }, [pathname, loadSessions]);
 
   const handleNewChat = async () => {
     const session = await createSession();
     router.push(`/sessions/${session.id}`);
+    router.refresh();
     if (isMobile) setIsOpen(false);
     loadSessions();
   };
@@ -98,25 +121,44 @@ export default function Sidebar() {
           </div>
 
           {/* Sessions List */}
-          <div className="flex-1 overflow-y-auto space-y-1 pr-2 -mr-2 scrollbar-thin">
-            {sessions.map((session) => (
-              <div 
-                key={session.id}
-                onClick={() => {
-                  router.push(`/sessions/${session.id}`);
-                  if (isMobile) setIsOpen(false);
-                }}
-                className="group flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100"
-              >
-                <MessageSquare className="w-4 h-4 text-gray-400 group-hover:text-indigo-500 shrink-0" />
-                <span className="flex-1 text-sm text-gray-600 truncate group-hover:text-gray-900 font-medium">
-                  {session.title}
-                </span>
-                <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-opacity">
-                  <MoreVertical className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+          <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin">
+            {Object.entries(groupedSessions).map(([group, sessions]) => {
+              if (sessions.length === 0) return null;
+              
+              return (
+                <div key={group} className="mb-6">
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    {group}
+                  </h3>
+                  <div className="space-y-1">
+                    {sessions.map((session) => (
+                      <div 
+                        key={session.id}
+                        onClick={() => {
+                          router.push(`/sessions/${session.id}`);
+                          if (isMobile) setIsOpen(false);
+                        }}
+                        className={`group flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100 ${
+                          pathname === `/sessions/${session.id}` ? 'bg-white shadow-sm border-gray-100' : ''
+                        }`}
+                      >
+                        <MessageSquare className={`w-4 h-4 shrink-0 ${
+                          pathname === `/sessions/${session.id}` ? 'text-indigo-500' : 'text-gray-400 group-hover:text-indigo-500'
+                        }`} />
+                        <span className={`flex-1 text-sm truncate font-medium ${
+                          pathname === `/sessions/${session.id}` ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                        }`}>
+                          {session.title}
+                        </span>
+                        <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-opacity">
+                          <MoreVertical className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Footer */}

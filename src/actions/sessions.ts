@@ -6,9 +6,9 @@ import { eq, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 export async function getSessions() {
-  return await db.query.sessions.findMany({
-    orderBy: [desc(sessions.updatedAt)],
-  });
+  const data = await db.select().from(sessions).orderBy(desc(sessions.updatedAt));
+  console.log(`[Server] getSessions returned ${data.length} sessions`);
+  return data;
 }
 
 export async function getSession(id: string) {

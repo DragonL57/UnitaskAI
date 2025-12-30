@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
-import { getMessages, saveMessage } from '@/actions/sessions';
+import { getMessages } from '@/actions/sessions';
 
 interface OrchestrationStep {
   type: 'thought' | 'action' | 'report';
@@ -25,10 +25,8 @@ interface Message {
   steps?: OrchestrationStep[];
 }
 
-export default function Chat({ sessionId }: { sessionId?: string }) {
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }
-  ]);
+export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, onNewMessage?: () => void }) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -47,12 +45,12 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
             agent: 'main' as const // Agent info isn't stored in DB yet, defaulting to main
           })).reverse());
         } else {
-          setMessages([{ id: '1', role: 'assistant', content: 'Hello! This is a new session. How can I help you?', agent: 'main' }]);
+          setMessages([]);
         }
         setIsLoading(false);
       });
     } else {
-      setMessages([{ id: '1', role: 'assistant', content: 'Hello! I am your AI companion. How can I help you today?', agent: 'main' }]);
+      setMessages([]);
     }
   }, [sessionId]);
 
@@ -78,12 +76,6 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
 
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
-    
-    // Save user message to DB if session exists
-    if (sessionId) {
-      await saveMessage(sessionId, 'user', input);
-    }
-
     setInput('');
     setIsLoading(true);
 
@@ -100,7 +92,7 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history }),
+        body: JSON.stringify({ message: input, history, sessionId }),
         signal: controller.signal
       });
 
@@ -109,7 +101,6 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let done = false;
-      let fullAssistantContent = '';
 
       if (!reader) throw new Error('No reader found');
 
@@ -146,7 +137,6 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
 
                   if (needsNew) {
                     const newId = (Date.now() + Math.random()).toString();
-                    if (event.type === 'chunk') fullAssistantContent += event.text;
 
                     const newMsg: Message = { 
                       id: newId, 
@@ -174,7 +164,6 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
                         }];
                       } else if (event.type === 'chunk') {
                         updated.content = m.content + event.text;
-                        fullAssistantContent += event.text;
                       }
                       return updated;
                     });
@@ -188,10 +177,11 @@ export default function Chat({ sessionId }: { sessionId?: string }) {
         }
       }
 
-      // Save assistant message to DB if session exists
-      if (sessionId && fullAssistantContent) {
-        await saveMessage(sessionId, 'assistant', fullAssistantContent);
+      // Refresh sidebar if callback provided
+      if (onNewMessage) {
+        onNewMessage();
       }
+      window.dispatchEvent(new CustomEvent('refresh-sessions'));
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
