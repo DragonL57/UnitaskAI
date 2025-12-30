@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
-import { getMessages, createSession } from '@/actions/sessions';
+import { getMessages, createSession, getSession } from '@/actions/sessions';
 import { useChat, Message, OrchestrationStep } from '@/context/ChatContext';
 
 export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, onNewMessage?: () => void }) {
@@ -27,23 +27,32 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
   useEffect(() => {
     if (sessionId) {
       setIsLoading(true);
-      getMessages(sessionId).then((dbMessages) => {
-        if (dbMessages && dbMessages.length > 0) {
-          setMessages(dbMessages.map(m => ({
-            id: m.id,
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-            agent: 'main' as const
-          })).reverse());
-        } else {
-          setMessages([]);
+      getSession(sessionId).then((session) => {
+        if (!session) {
+          // Session not found, redirect to root
+          router.push('/');
+          setIsLoading(false);
+          return;
         }
-        setIsLoading(false);
+
+        getMessages(sessionId).then((dbMessages) => {
+          if (dbMessages && dbMessages.length > 0) {
+            setMessages(dbMessages.map(m => ({
+              id: m.id,
+              role: m.role as 'user' | 'assistant',
+              content: m.content,
+              agent: 'main' as const
+            })).reverse());
+          } else {
+            setMessages([]);
+          }
+          setIsLoading(false);
+        });
       });
     } else {
       setMessages([]);
     }
-  }, [sessionId, setMessages, setIsLoading]);
+  }, [sessionId, setMessages, setIsLoading, router]);
 
   useEffect(() => {
     if (scrollRef.current) {
