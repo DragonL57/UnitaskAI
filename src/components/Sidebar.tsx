@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   PanelLeftClose, 
   PanelLeftOpen, 
@@ -8,10 +8,14 @@ import {
   MessageSquare, 
   Search, 
   MoreVertical, 
-  Settings
+  Settings,
+  Trash2,
+  Edit2,
+  X,
+  Check
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getSessions, createSession } from '@/actions/sessions';
+import { getSessions, createSession, deleteSession, updateSessionTitle } from '@/actions/sessions';
 import { groupSessionsByDate } from '@/lib/utils';
 
 interface Session {
@@ -24,15 +28,20 @@ interface Session {
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [groupedSessions, setGroupedSessions] = useState<Record<string, Session[]>>({});
+  const [allSessions, setAllSessions] = useState<Session[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  
   const router = useRouter();
   const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const loadSessions = useCallback(async () => {
     try {
       const data = await getSessions();
-      const grouped = groupSessionsByDate(data);
-      setGroupedSessions(grouped);
+      setAllSessions(data as Session[]);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     }
@@ -63,6 +72,16 @@ export default function Sidebar() {
     loadSessions();
   }, [pathname, loadSessions]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpenId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleNewChat = async () => {
     const session = await createSession();
     router.push(`/sessions/${session.id}`);
@@ -70,6 +89,39 @@ export default function Sidebar() {
     if (isMobile) setIsOpen(false);
     loadSessions();
   };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this chat?')) {
+      await deleteSession(id);
+      if (pathname === `/sessions/${id}`) {
+        router.push('/');
+      }
+      loadSessions();
+      setMenuOpenId(null);
+    }
+  };
+
+  const startEditing = (e: React.MouseEvent, session: Session) => {
+    e.stopPropagation();
+    setEditingSessionId(session.id);
+    setEditTitle(session.title);
+    setMenuOpenId(null);
+  };
+
+  const handleRename = async (id: string) => {
+    if (editTitle.trim()) {
+      await updateSessionTitle(id, editTitle.trim());
+      setEditingSessionId(null);
+      loadSessions();
+    }
+  };
+
+  const filteredSessions = allSessions.filter(s => 
+    s.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const groupedSessions = groupSessionsByDate(filteredSessions);
 
   return (
     <>
@@ -110,12 +162,14 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* Search Placeholder */}
+          {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
               type="text"
               placeholder="Search chats..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-gray-100/50 border-transparent focus:bg-white focus:border-indigo-100 rounded-lg text-xs outline-none transition-all"
             />
           </div>
@@ -135,24 +189,81 @@ export default function Sidebar() {
                       <div 
                         key={session.id}
                         onClick={() => {
-                          router.push(`/sessions/${session.id}`);
-                          if (isMobile) setIsOpen(false);
+                          if (editingSessionId !== session.id) {
+                            router.push(`/sessions/${session.id}`);
+                            if (isMobile) setIsOpen(false);
+                          }
                         }}
-                        className={`group flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100 ${
+                        className={`group flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100 relative ${
                           pathname === `/sessions/${session.id}` ? 'bg-white shadow-sm border-gray-100' : ''
                         }`}
                       >
                         <MessageSquare className={`w-4 h-4 shrink-0 ${
                           pathname === `/sessions/${session.id}` ? 'text-indigo-500' : 'text-gray-400 group-hover:text-indigo-500'
                         }`} />
-                        <span className={`flex-1 text-sm truncate font-medium ${
-                          pathname === `/sessions/${session.id}` ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
-                        }`}>
-                          {session.title}
-                        </span>
-                        <button className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-opacity">
-                          <MoreVertical className="w-3.5 h-3.5" />
-                        </button>
+                        
+                        {editingSessionId === session.id ? (
+                          <div className="flex-1 flex items-center gap-1 min-w-0" onClick={e => e.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={editTitle}
+                              onChange={e => setEditTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRename(session.id);
+                                if (e.key === 'Escape') setEditingSessionId(null);
+                              }}
+                              className="w-full bg-gray-50 border border-indigo-200 rounded px-1.5 py-0.5 text-sm outline-none"
+                            />
+                            <button onClick={() => handleRename(session.id)} className="p-1 hover:bg-emerald-50 text-emerald-600 rounded">
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setEditingSessionId(null)} className="p-1 hover:bg-rose-50 text-rose-600 rounded">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className={`flex-1 text-sm truncate font-medium ${
+                              pathname === `/sessions/${session.id}` ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+                            }`}>
+                              {session.title}
+                            </span>
+                            <div className="relative">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMenuOpenId(menuOpenId === session.id ? null : session.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-opacity"
+                              >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+                              
+                              {menuOpenId === session.id && (
+                                <div 
+                                  ref={menuRef}
+                                  className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  <button 
+                                    onClick={(e) => startEditing(e, session)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                    Rename
+                                  </button>
+                                  <button 
+                                    onClick={(e) => handleDelete(e, session.id)}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
