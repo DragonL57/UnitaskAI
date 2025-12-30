@@ -9,7 +9,7 @@ This document outlines the core technologies and architectural choices for the m
 
 ## Backend & Logic
 - **Modular Architecture:** A clean separation of concerns:
-    - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, and Memory agents.
+    - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, Memory, and Rename agents.
     - `prompts/`: Hybrid XML/Markdown prompt architecture optimized for LLM processing and clear section boundaries.
     - `tools/`: Independent modules for external API interactions.
 - **Next.js Server Actions:** Used for secure, server-side execution of agent logic and API calls.

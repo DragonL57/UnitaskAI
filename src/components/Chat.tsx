@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Send, Zap, ChevronUp, ChevronDown, Search, FileText, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 
-import { getMessages } from '@/actions/sessions';
+import { getMessages, createSession } from '@/actions/sessions';
 
 interface OrchestrationStep {
   type: 'thought' | 'action' | 'report';
@@ -32,6 +33,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (sessionId) {
@@ -42,7 +44,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
             id: m.id,
             role: m.role as 'user' | 'assistant',
             content: m.content,
-            agent: 'main' as const // Agent info isn't stored in DB yet, defaulting to main
+            agent: 'main' as const
           })).reverse());
         } else {
           setMessages([]);
@@ -71,6 +73,16 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
+    let currentSessionId = sessionId;
+
+    // Create session if it doesn't exist
+    if (!currentSessionId) {
+      const session = await createSession();
+      currentSessionId = session.id;
+      // Navigate to the new session URL
+      router.push(`/sessions/${session.id}`);
+    }
+
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -92,7 +104,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history, sessionId }),
+        body: JSON.stringify({ message: input, history, sessionId: currentSessionId }),
         signal: controller.signal
       });
 

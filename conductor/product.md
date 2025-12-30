@@ -20,6 +20,7 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Google Calendar Integration:** Full capability to read existing events, schedule new appointments, and provide timely reminders.
 - **Tavily Integration:** Utilization of Tavily for high-performance web search and webpage content extraction, ensuring accurate and relevant information retrieval.
 - **Deep Reasoning Memory:** A persistent memory system where a dedicated agent performs "Sleep-time Compute" to consolidate facts and infer user habits over time.
+- **Persistent Session History:** A collapsible, mobile-first sidebar that organizes chat history chronologically, enabling users to manage and revisit past conversations easily.
 - **Interactive Transparency:** A sophisticated background process log that allows users to visualize the multi-agent orchestration, complete with interactive search result pills and a chronological timeline of actions.
 
 ## Project Status
@@ -33,3 +34,5 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 - **Sleep-time Compute:** The Memory Agent now operates as a reasoning worker, performing iterative, offline consolidation to refine its understanding of the user.
 - **Interactive Transparency Log:** The UI now features a minimalistic, box-styled "Steps Taken" log that is individually collapsible and displays search results as interactive pills.
 - **Temporal Awareness:** The system is now fully aware of the user's local time (UTC+7, Vietnam Time), ensuring accurate scheduling and context.
+- **Database-Backed Sessions:** Chat history is now persisted in a Neon PostgreSQL database using Drizzle ORM, supporting full CRUD operations.
+- **Dynamic Session Management:** The application now supports multiple chat threads with auto-titling, real-time search, and manual rename/delete capabilities.
