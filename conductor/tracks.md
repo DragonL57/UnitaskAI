@@ -125,3 +125,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## [x] Track: Project Architecture & Routing Refactor
 *Link: [./conductor/tracks/arch_routing_refactor_20251230/](./conductor/tracks/arch_routing_refactor_20251230/)*
+
+---
+
+## [ ] Track: Search Tool Refactor & Consulter Agent Integration
+*Link: [./conductor/tracks/search_consulter_refactor_20251230/](./conductor/tracks/search_consulter_refactor_20251230/)*
