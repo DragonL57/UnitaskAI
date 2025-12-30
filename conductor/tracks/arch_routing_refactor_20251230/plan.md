@@ -8,10 +8,10 @@ This plan outlines the steps to refactor the application into a modular, feature
 - [x] Task: Verify that all existing routes (`/`, `/sessions/[id]`) still function correctly after the move d71b1fc
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Route Groups' (Protocol in workflow.md)
 
-## Phase 2: State Management (Context API)
-- [ ] Task: Implement `ChatProvider` in `src/context/ChatContext.tsx` to handle shared session and message state
-- [ ] Task: Wrap the application (within the route group) with `ChatProvider`
-- [ ] Task: Refactor `src/components/Chat.tsx` and `src/components/Sidebar.tsx` to consume state from `ChatContext` instead of local state/server actions directly
+## Phase 2: State Management (Context API) [checkpoint: 80bbc79]
+- [x] Task: Implement `ChatProvider` in `src/context/ChatContext.tsx` to handle shared session and message state e6718d2
+- [x] Task: Wrap the application (within the route group) with `ChatProvider` d7bc4fd
+- [x] Task: Refactor `src/components/Chat.tsx` and `src/components/Sidebar.tsx` to consume state from `ChatContext` instead of local state/server actions directly f651e24
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: State Management (Context API)' (Protocol in workflow.md)
 
 ## Phase 3: Component Decomposition - UI Atoms
