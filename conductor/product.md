@@ -17,14 +17,17 @@ To create a sophisticated multi-agent chatbot companion that acts as a proactive
 
 # Key Features
 - **Multi-Agent Architecture:** A specialized system featuring dedicated agents (e.g., Scheduler Agent, Researcher Agent, and a Main Companion Agent) for optimized task execution.
+- **Consulter Specialist (Critique Loop):** A dedicated quality-control agent that reviews and critiques the Main Agent's draft answers for completeness and logic before they are shown to the user.
 - **Google Calendar Integration:** Full capability to read existing events, schedule new appointments, and provide timely reminders.
-- **Tavily Integration:** Utilization of Tavily for high-performance web search and webpage content extraction, ensuring accurate and relevant information retrieval.
+- **Resilient Search Architecture:** A robust search system using Brave Search as the primary engine, falling back to Tavily and direct scraping to ensure reliable information retrieval even during API outages.
 - **Deep Reasoning Memory:** A persistent memory system where a dedicated agent performs "Sleep-time Compute" to consolidate facts and infer user habits over time.
 - **Persistent Session History:** A collapsible, mobile-first sidebar that organizes chat history chronologically, enabling users to manage and revisit past conversations easily.
 - **Interactive Transparency:** A sophisticated background process log that allows users to visualize the multi-agent orchestration, complete with interactive search result pills and a chronological timeline of actions.
 
 ## Project Status
 - **Core Implementation Complete:** The foundational multi-agent orchestration, Google Calendar integration, Tavily search, and persistent memory system are fully implemented and verified.
+- **Consulter Agent Integration:** The system now employs a 'Critique Loop' where a Consulter Agent reviews complex answers, ensuring higher quality and logical consistency.
+- **Resilient Search:** The Researcher Agent now implements a multi-tiered fallback strategy (Brave -> Tavily -> Direct Scrape) to handle API limits and errors gracefully.
 - **Context Awareness:** The chatbot now maintains conversation context within a session, allowing for follow-up questions and more natural dialogue.
 - **Silent Memory:** The Memory Agent now acts as a background observer, autonomously identifying and saving user facts without explicit commands.
 - **Code-Style Memory:** Memory is now stored in a human-readable Markdown file (`memory.md`), treating personal data as a "living document" that the AI edits.

@@ -3,8 +3,6 @@
  * Strategy: Tavily -> Direct Fetch -> Wayback Machine
  */
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 /**
  * Clean HTML content to plain text.
  */

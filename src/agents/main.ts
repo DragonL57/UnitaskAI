@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { poe, MODEL_NAME } from '@/lib/poe';
 import { readMemory, evaluateAndStore } from '@/agents/memory';
 import { incrementStepCounter, shouldRunSleepTimeAgent } from './memoryAgentState';
-import { handleSchedulerRequest } from '@/agents/scheduler';
+import { handleSchedulerRequest, SchedulerStep } from '@/agents/scheduler';
 import { handleResearcherRequest, ResearcherStep } from '@/agents/researcher';
 import { handleConsulterRequest } from '@/agents/consulter';
 import { MAIN_COMPANION_PROMPT } from '@/prompts/main';
@@ -87,7 +87,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
 
   const internalMessages = [...baseMessages];
   let currentRound = 0;
-  const MAX_ROUNDS = 5;
+  const MAX_ROUNDS = 10;
 
   yield { type: 'agent', name: 'main' };
 
@@ -99,6 +99,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
     }
     while (currentRound < MAX_ROUNDS) {
       currentRound++;
+      console.log(`[Main Agent] Round ${currentRound}: Requesting model decision...`);
       
       const response = await poe.chat.completions.create({
         model: MODEL_NAME,
@@ -110,6 +111,7 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
       const assistantMessage = response.choices[0].message;
       
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
+        console.log(`[Main Agent] Round ${currentRound}: No tool calls. Streaming final response...`);
         // Stream the final response using proper OpenAI SDK types
         const stream = await poe.chat.completions.create({
           model: MODEL_NAME,
@@ -145,11 +147,13 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
 
         yield { type: 'agent', name: agentName };
         
-        let subResponse: string | { report: string; steps?: ResearcherStep[] };
+        let subResponse: string | { report: string; steps?: (ResearcherStep | SchedulerStep)[] };
         let actionText = "";
 
         if (agentName === 'consulter') {
           actionText = `Main ➔ Consulter: "Critique this draft..."`;
+          yield { type: 'action', text: actionText };
+
           // Execute Consulter logic
           const critique = await handleConsulterRequest(userQuery, args.draft_answer, internalMessages);
           if (critique.status === 'critique') {
@@ -159,29 +163,39 @@ export async function* chat(userQuery: string, history: MessageContext[] = []): 
           }
         } else {
           actionText = `Main ➔ ${agentName.charAt(0).toUpperCase() + agentName.slice(1)}: "${args.instruction}"`;
+          yield { type: 'action', text: actionText };
+          
           subResponse = await (fn.name === 'delegateToScheduler' 
             ? handleSchedulerRequest(args.instruction) 
             : handleResearcherRequest(args.instruction));
         }
         
-        yield { type: 'action', text: actionText };
+        // yield { type: 'action', text: actionText }; // Moved up for real-time feedback
 
         if (typeof subResponse !== 'string' && subResponse.steps) {
             for (const s of subResponse.steps) {
-              if (s.type === 'search') {
-                const statusText = s.status && s.status !== 'success' ? ` [${s.status.toUpperCase()}${s.engine ? `: ${s.engine}` : ''}]` : '';
+              if ('type' in s && s.type === 'search' && 'query' in s) {
+                // Researcher Search
+                const rs = s as ResearcherStep;
+                const statusText = rs.status && rs.status !== 'success' ? ` [${rs.status.toUpperCase()}${rs.engine ? `: ${rs.engine}` : ''}]` : '';
                 yield { 
                   type: 'action', 
-                  text: `Web Search: "${s.query}"${statusText}`, 
+                  text: `Web Search: "${rs.query}"${statusText}`, 
                   metadata: { 
-                    urls: s.results?.map((r: { url: string }) => r.url), 
-                    titles: s.results?.map((r: { title: string }) => r.title),
-                    engine: s.engine ? [s.engine] : undefined,
-                    status: s.status ? [s.status] : undefined
+                    urls: rs.results?.map((r: { url: string }) => r.url), 
+                    titles: rs.results?.map((r: { title: string }) => r.title),
+                    engine: rs.engine ? [rs.engine] : undefined,
+                    status: rs.status ? [rs.status] : undefined
                   } 
                 };
-              } else if (s.type === 'read') {
-                yield { type: 'action', text: `Reading Webpage: ${s.url}` };
+              } else if ('type' in s && s.type === 'read' && 'url' in s) {
+                // Researcher Read
+                const rs = s as ResearcherStep;
+                yield { type: 'action', text: `Reading Webpage: ${rs.url}` };
+              } else if ('details' in s) {
+                // Scheduler Step
+                const ss = s as SchedulerStep;
+                yield { type: 'action', text: `Scheduler: ${ss.details}` };
               }
             }
         }

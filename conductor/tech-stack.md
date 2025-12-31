@@ -13,7 +13,7 @@ This document outlines the core technologies and architectural choices for the m
     - `src/app/(app)`: Dedicated Next.js Route Group for core application logic and persistent UI.
     - `src/context/`: Centralized state management using React Context.
     - `src/components/ui/`: Atomic, stateless UI components.
-    - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, Memory, and Rename agents.
+    - `agents/`: Dedicated logic for the Main Companion, Scheduler, Researcher, Memory, Rename, and Consulter agents.
     - `prompts/`: Hybrid XML/Markdown prompt architecture optimized for LLM processing and clear section boundaries.
     - `tools/`: Independent modules for external API interactions.
 - **Next.js Server Actions:** Used for secure, server-side execution of agent logic and API calls.
@@ -29,7 +29,8 @@ This document outlines the core technologies and architectural choices for the m
 
 ## External Integrations
 - **Google Calendar API:** Integrated via server-side modules for managing schedules.
-- **Tavily Search API:** Used for high-performance web searching and webpage content extraction.
+- **Brave Search API:** Primary engine for high-quality web search results.
+- **Tavily Search API:** Fallback engine for search and robust webpage content extraction.
 
 ## Memory System
 - **Agent-Managed File Storage:** A unique approach where a dedicated, silent "Memory Agent" maintains a persistent text-based or structured file.

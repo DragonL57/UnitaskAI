@@ -93,7 +93,17 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   },
 ];
 
-export async function handleSchedulerRequest(instruction: string): Promise<string> {
+export interface SchedulerStep {
+  type: 'list' | 'search' | 'create' | 'update' | 'delete' | 'check';
+  details: string;
+}
+
+export interface SchedulerResponse {
+  report: string;
+  steps: SchedulerStep[];
+}
+
+export async function handleSchedulerRequest(instruction: string): Promise<SchedulerResponse> {
   const systemPrompt = SCHEDULER_PROMPT.replace('{{currentTime}}', getVietnamTime());
   const internalMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: systemPrompt },
@@ -102,6 +112,7 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
 
   let rounds = 0;
   const MAX_ROUNDS = 5;
+  const steps: SchedulerStep[] = [];
 
   try {
     while (rounds < MAX_ROUNDS) {
@@ -118,7 +129,10 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
 
       if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
         // Specialist has finished and is providing the report
-        return assistantMessage.content || "Task completed.";
+        return { 
+          report: assistantMessage.content || "Task completed.", 
+          steps 
+        };
       }
 
       // Execute tool calls and add results to context
@@ -129,12 +143,30 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
           console.log(`[Scheduler Specialist] Round ${rounds}: Executing ${fn.name}...`);
 
           let result;
-          if (fn.name === 'listEvents') result = await listEvents();
-          else if (fn.name === 'searchEvents') result = await searchEvents(args.query);
-          else if (fn.name === 'createEvent') result = await createEvent(args.summary, args.start, args.end, args.description);
-          else if (fn.name === 'updateEvent') result = await updateEvent(args.eventId, args.summary, args.start, args.end, args.description);
-          else if (fn.name === 'deleteEvent') result = await deleteEvent(args.eventId);
-          else if (fn.name === 'checkConflicts') result = await checkConflicts(args.start, args.end);
+          if (fn.name === 'listEvents') {
+            steps.push({ type: 'list', details: 'Listing upcoming events' });
+            result = await listEvents();
+          }
+          else if (fn.name === 'searchEvents') {
+            steps.push({ type: 'search', details: `Searching events: "${args.query}"` });
+            result = await searchEvents(args.query);
+          }
+          else if (fn.name === 'createEvent') {
+            steps.push({ type: 'create', details: `Creating event: "${args.summary}"` });
+            result = await createEvent(args.summary, args.start, args.end, args.description);
+          }
+          else if (fn.name === 'updateEvent') {
+            steps.push({ type: 'update', details: `Updating event: ${args.eventId}` });
+            result = await updateEvent(args.eventId, args.summary, args.start, args.end, args.description);
+          }
+          else if (fn.name === 'deleteEvent') {
+            steps.push({ type: 'delete', details: `Deleting event: ${args.eventId}` });
+            result = await deleteEvent(args.eventId);
+          }
+          else if (fn.name === 'checkConflicts') {
+            steps.push({ type: 'check', details: `Checking conflicts` });
+            result = await checkConflicts(args.start, args.end);
+          }
 
           internalMessages.push({
             role: 'tool',
@@ -145,9 +177,9 @@ export async function handleSchedulerRequest(instruction: string): Promise<strin
       }
       // Loop continues to let specialist analyze results...
     }
-    return "I reached my tool limit for this calendar task.";
+    return { report: "I reached my tool limit for this calendar task.", steps };
   } catch (error) {
     console.error('Scheduler Specialist Error:', error);
-    return `Report: Error during calendar management.`;
+    return { report: `Report: Error during calendar management.`, steps };
   }
 }

@@ -1,5 +1,5 @@
 import { put, list } from '@vercel/blob';
-import { poe, MODEL_NAME } from '@/lib/poe';
+import { poe, REASONING_MODEL_NAME } from '@/lib/poe';
 import { MEMORY_EVALUATOR_PROMPT } from '@/prompts/memory';
 import { revalidatePath } from 'next/cache';
 import OpenAI from 'openai';
@@ -131,7 +131,7 @@ export async function evaluateAndStore(userQuery: string) {
     while (rounds < MAX_ROUNDS) {
       rounds++;
       const response = await poe.chat.completions.create({
-        model: MODEL_NAME,
+        model: REASONING_MODEL_NAME,
         messages: messages,
         tools: tools,
         tool_choice: 'auto',

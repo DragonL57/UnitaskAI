@@ -17,6 +17,8 @@ Analyze the draft based on these two strict criteria:
 2. **Logical Consistency**:
    - Are there contradictions in the reasoning?
    - Is the tone appropriate (helpful, professional)?
+   - **No Parentheses**: Ensure the Main Agent does not use parentheses \`()\` in the final output. If present, flag them in your critique.
+
 </critique_framework>
 
 <output_format>

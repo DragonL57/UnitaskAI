@@ -165,8 +165,9 @@ export async function handleResearcherRequest(instruction: string): Promise<Rese
             } else if (functionName === 'readWebpage') {
               try {
                 toolResult = await _readWebpage(functionArgs.url);
-              } catch (tavilyError: any) {
-                console.warn(`[Researcher] Tavily extraction failed, trying fallback scraper...`, tavilyError.message);
+              } catch (tavilyError: unknown) {
+                const errorMessage = tavilyError instanceof Error ? tavilyError.message : String(tavilyError);
+                console.warn(`[Researcher] Tavily extraction failed, trying fallback scraper...`, errorMessage);
                 toolResult = await readWebpageWithFallback(functionArgs.url);
               }
               
@@ -175,10 +176,11 @@ export async function handleResearcherRequest(instruction: string): Promise<Rese
                 url: functionArgs.url
               });
             }
-          } catch (toolError: any) {
-            console.error(`[Researcher] Tool ${functionName} failed:`, toolError.message);
+          } catch (toolError: unknown) {
+            const errorMessage = toolError instanceof Error ? toolError.message : String(toolError);
+            console.error(`[Researcher] Tool ${functionName} failed:`, errorMessage);
             toolResult = { 
-              error: `Tool ${functionName} failed: ${toolError.message}. Use previous information if available.` 
+              error: `Tool ${functionName} failed: ${errorMessage}. Use previous information if available.` 
             };
           }
 
