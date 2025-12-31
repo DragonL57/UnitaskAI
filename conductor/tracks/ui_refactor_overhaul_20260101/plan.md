@@ -1,0 +1,26 @@
+# Plan: UI Refactor and Overhaul
+
+This plan outlines the steps to modernize the UI, improve UX, and refine key components like the Chat Interface and Action Log.
+
+## Phase 1: Global Layout & Visual System [checkpoint: TBD]
+- [ ] Task: Audit and update global color palette and typography variables in `globals.css`
+- [ ] Task: Refactor `Sidebar.tsx` for cleaner structure and responsive behavior
+- [ ] Task: Refactor Dashboard/Home page layout for better information density and visual appeal
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Global Layout & Visual System' (Protocol in workflow.md)
+
+## Phase 2: Chat Interface Improvements [checkpoint: TBD]
+- [ ] Task: Enhance `MessageItem` component styling for better readability and spacing
+- [ ] Task: Update `MarkdownRenderer` (or equivalent) to style code blocks and headers more cleanly
+- [ ] Task: Refine `InputArea` design for a more modern chat experience
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Chat Interface Improvements' (Protocol in workflow.md)
+
+## Phase 3: Action Log & Consulter Feedback [checkpoint: TBD]
+- [ ] Task: Refactor `AgentActionLog` to be more compact by default
+- [ ] Task: Implement smoother collapse/expand animations for the action log
+- [ ] Task: Add distinct visual states (icons/colors) for "Consulter" actions (Approved vs Critique) in the log
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Action Log & Consulter Feedback' (Protocol in workflow.md)
+
+## Phase 4: Final Polish & Responsiveness [checkpoint: TBD]
+- [ ] Task: Conduct a mobile responsiveness audit across all new layouts and fix issues
+- [ ] Task: Ensure accessibility (contrast, focus states) across updated components
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Final Polish & Responsiveness' (Protocol in workflow.md)
