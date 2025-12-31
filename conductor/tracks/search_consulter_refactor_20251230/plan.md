@@ -23,7 +23,7 @@ This plan outlines the steps to refactor the search tool with DuckDuckGo primary
 - [x] Task: Update the `AgentActionLog` or message item UI to display the "Draft" and "Critique" steps 9a3b141
 - [x] Task: Ensure the final refined answer is displayed as the primary response 11b8603
 - [x] Task: Run project-wide linting and type checking to ensure zero regressions VERIFIED
-## Phase 4: Switch to Brave Search API (Repair)
+## Phase 4: Switch to Brave Search API (Repair) [checkpoint: 616f42a]
 - [x] Task: Create `src/tools/brave-search.ts` using Brave Web Search API b6c4f92
 - [x] Task: Refactor `src/agents/researcher.ts` to use Brave Search as primary engine fbf9117
-- [~] Task: Conductor - User Manual Verification 'Phase 4: Switch to Brave Search API' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Switch to Brave Search API' (Protocol in workflow.md)
