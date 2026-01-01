@@ -36,17 +36,17 @@
 
 :root {
   --background: 240 20% 99%;      /* #fbfbfc - Whiteout */
-  --foreground: 252 4% 47%;       /* #77757b - Hawk Grey */
+  --foreground: 240 3% 18%;       /* #2d2d30 - Dark Grey (Readability) */
   --card: 240 20% 99%;
-  --card-foreground: 252 4% 47%;
+  --card-foreground: 240 3% 18%;
   --popover: 240 20% 99%;
-  --popover-foreground: 252 4% 47%;
+  --popover-foreground: 240 3% 18%;
   --primary: 243 91% 69%;        /* #7169f8 - If I Could Fly */
   --primary-foreground: 240 20% 99%;
   --secondary: 216 12% 93%;      /* #eceef1 - Bái Sè White */
   --secondary-foreground: 243 91% 69%;
   --muted: 216 12% 93%;
-  --muted-foreground: 206 6% 79%;  /* #c6c9cc - Grey Screen */
+  --muted-foreground: 252 4% 47%;  /* #77757b - Hawk Grey (Muted) */
   --accent: 180 2% 87%;           /* #dbdede - Script White */
   --accent-foreground: 243 91% 69%;
   --destructive: 0 84.2% 60.2%;
