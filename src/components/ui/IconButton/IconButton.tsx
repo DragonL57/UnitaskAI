@@ -11,10 +11,10 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
     const baseStyles = 'inline-flex items-center justify-center transition-all active:scale-90 disabled:opacity-50 disabled:pointer-events-none rounded-xl';
     
     const variants = {
-      ghost: 'bg-transparent text-gray-400 hover:bg-gray-100 hover:text-gray-600',
-      secondary: 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-amber-500 border border-gray-100 shadow-sm',
-      outline: 'bg-white text-gray-400 hover:text-gray-600 border border-gray-100 shadow-sm hover:bg-gray-50',
-      danger: 'bg-transparent text-rose-400 hover:bg-rose-50 hover:text-rose-600',
+      ghost: 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
+      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border shadow-sm',
+      outline: 'bg-background text-muted-foreground hover:text-foreground border border-border shadow-sm hover:bg-muted',
+      danger: 'bg-transparent text-destructive hover:bg-destructive/10',
     };
 
     const sizes = {

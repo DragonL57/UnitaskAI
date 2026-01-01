@@ -15,13 +15,13 @@ export const SessionList = ({ sessions, isMobile, onCloseMobile }: SessionListPr
   const groupedSessions = groupSessionsByDate(sessions);
 
   return (
-    <div className="flex-1 overflow-y-auto pr-2 -mr-2 scrollbar-thin">
+    <div className="flex-1 overflow-y-auto pr-2 -mr-2">
       {Object.entries(groupedSessions).map(([group, groupSessions]) => {
         if (groupSessions.length === 0) return null;
         
         return (
           <div key={group} className="mb-6">
-            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {group}
             </h3>
             <div className="space-y-1">

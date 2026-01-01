@@ -64,12 +64,12 @@ export const SessionItem = ({ session, isMobile, onCloseMobile }: SessionItemPro
           if (isMobile && onCloseMobile) onCloseMobile();
         }
       }}
-      className={`group flex items-center gap-3 px-3 py-2.5 hover:bg-white hover:shadow-sm rounded-xl cursor-pointer transition-all border border-transparent hover:border-gray-100 relative ${
-        isActive ? 'bg-white shadow-sm border-gray-100' : ''
+      className={`group flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 rounded-xl cursor-pointer transition-all border border-transparent hover:border-border/50 relative ${
+        isActive ? 'bg-muted shadow-sm border-border/50' : ''
       }`}
     >
       <MessageSquare className={`w-4 h-4 shrink-0 ${
-        isActive ? 'text-indigo-500' : 'text-gray-400 group-hover:text-indigo-500'
+        isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
       }`} />
       
       {isEditing ? (
@@ -82,19 +82,19 @@ export const SessionItem = ({ session, isMobile, onCloseMobile }: SessionItemPro
               if (e.key === 'Enter') handleRename();
               if (e.key === 'Escape') setIsEditing(false);
             }}
-            className="w-full bg-gray-50 border border-indigo-200 rounded px-1.5 py-0.5 text-sm outline-none"
+            className="w-full bg-muted border border-primary/20 rounded px-1.5 py-0.5 text-sm outline-none text-foreground"
           />
-          <button onClick={handleRename} className="p-1 hover:bg-emerald-50 text-emerald-600 rounded">
+          <button onClick={handleRename} className="p-1 hover:bg-emerald-500/10 text-emerald-500 rounded">
             <Check className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-rose-50 text-rose-600 rounded">
+          <button onClick={() => setIsEditing(false)} className="p-1 hover:bg-destructive/10 text-destructive rounded">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
       ) : (
         <>
           <span className={`flex-1 text-sm truncate font-medium ${
-            isActive ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'
+            isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
           }`}>
             {session.title}
           </span>
@@ -104,7 +104,7 @@ export const SessionItem = ({ session, isMobile, onCloseMobile }: SessionItemPro
                 e.stopPropagation();
                 setIsMenuOpen(!isMenuOpen);
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-md text-gray-400 transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded-md text-muted-foreground transition-opacity"
             >
               <MoreVertical className="w-3.5 h-3.5" />
             </button>
@@ -112,7 +112,7 @@ export const SessionItem = ({ session, isMobile, onCloseMobile }: SessionItemPro
             {isMenuOpen && (
               <div 
                 ref={menuRef}
-                className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-100 rounded-xl shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100"
+                className="absolute right-0 top-full mt-1 w-36 bg-background border border-border rounded-xl shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100"
                 onClick={e => e.stopPropagation()}
               >
                 <button 
@@ -121,14 +121,14 @@ export const SessionItem = ({ session, isMobile, onCloseMobile }: SessionItemPro
                     setIsEditing(true);
                     setIsMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   Rename
                 </button>
                 <button 
                   onClick={handleDelete}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 hover:bg-rose-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-destructive hover:bg-destructive/10"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Delete

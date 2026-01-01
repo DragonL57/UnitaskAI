@@ -35,48 +35,92 @@
 }
 
 :root {
-  --background: 300 1% 99%;      /* #fdfcfd - Brilliance */
-  --foreground: 0 0% 12%;        /* #1e1e1e - Dynamic Black */
+  /* HSL Conversions roughly approximated for the specific hex codes */
+  
+  /* #fdfcfd - Brilliance */
+  --background: 300 1% 99%;
+  
+  /* #1e1e1e - Dynamic Black */
+  --foreground: 0 0% 12%;
+  
+  /* #fdfcfd - Brilliance */
   --card: 300 1% 99%;
   --card-foreground: 0 0% 12%;
+  
   --popover: 300 1% 99%;
   --popover-foreground: 0 0% 12%;
-  --primary: 219 88% 65%;       /* #588ef4 - Blue Elemental */
+  
+  /* #588ef4 - Blue Elemental */
+  --primary: 219 88% 65%;
   --primary-foreground: 300 1% 99%;
-  --secondary: 235 52% 91%;     /* #dadcf4 - Nostalgia Perfume */
-  --secondary-foreground: 219 88% 20%;
-  --muted: 235 52% 91%;         /* #dadcf4 */
-  --muted-foreground: 148 15% 53%; /* #749985 - Silent Sage */
-  --accent: 248 37% 80%;        /* #beb9df - Wisteria Fragrance */
+  
+  /* #dadcf4 - Nostalgia Perfume */
+  --secondary: 235 52% 91%;
+  --secondary-foreground: 0 0% 12%;
+  
+  /* Lightened Nostalgia Perfume for backgrounds */
+  --muted: 235 52% 96%;
+  
+  /* #749985 - Silent Sage */
+  --muted-foreground: 148 15% 53%;
+  
+  /* #beb9df - Wisteria Fragrance */
+  --accent: 248 37% 80%;
   --accent-foreground: 0 0% 12%;
+  
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
-  --border: 235 52% 85%;
-  --input: 235 52% 85%;
+  
+  /* #dadcf4 - Nostalgia Perfume */
+  --border: 235 52% 91%;
+  --input: 235 52% 91%;
+  
+  /* #588ef4 - Blue Elemental */
   --ring: 219 88% 65%;
-  --radius: 0.75rem;
+  
+  --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: 0 0% 12%;      /* #1e1e1e - Dynamic Black */
-    --foreground: 300 1% 99%;    /* #fdfcfd - Brilliance */
-    --card: 0 0% 15%;
+    /* #1e1e1e - Dynamic Black */
+    --background: 0 0% 12%;
+    
+    /* #fdfcfd - Brilliance */
+    --foreground: 300 1% 99%;
+    
+    /* #1e1e1e - Dynamic Black */
+    --card: 0 0% 12%;
     --card-foreground: 300 1% 99%;
+    
     --popover: 0 0% 12%;
     --popover-foreground: 300 1% 99%;
-    --primary: 219 88% 65%;      /* #588ef4 - Blue Elemental */
+    
+    /* #588ef4 - Blue Elemental */
+    --primary: 219 88% 65%;
     --primary-foreground: 300 1% 99%;
-    --secondary: 248 37% 30%;    /* Darker Wisteria Fragrance */
+    
+    /* #2a2a35 - Darkened Nostalgia Perfume */
+    --secondary: 235 30% 20%;
     --secondary-foreground: 300 1% 99%;
-    --muted: 0 0% 20%;
-    --muted-foreground: 148 15% 70%; /* Lighter Silent Sage */
-    --accent: 148 15% 53%;       /* #749985 - Silent Sage */
+    
+    /* #2a2a35 */
+    --muted: 235 30% 20%;
+    
+    /* #749985 - Silent Sage (Lightened for dark mode readability) */
+    --muted-foreground: 148 15% 65%;
+    
+    /* #2a2a35 */
+    --accent: 235 30% 25%;
     --accent-foreground: 300 1% 99%;
+    
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+    
+    /* #2a2a35 */
+    --border: 235 30% 20%;
+    --input: 235 30% 20%;
+    
     --ring: 219 88% 65%;
   }
 }
@@ -85,6 +129,33 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Minimalistic Scrollbar */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  /* Chrome, Edge, and Safari */
+  *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 20px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-foreground);
+  }
 }
 
 /* Markdown Styling for Chat */

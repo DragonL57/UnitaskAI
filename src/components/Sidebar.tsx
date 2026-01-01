@@ -60,7 +60,7 @@ export default function Sidebar() {
       {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -68,9 +68,9 @@ export default function Sidebar() {
       {/* Sidebar Container */}
       <aside 
         className={`
-          ${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'relative border-r border-gray-100'}
+          ${isMobile ? 'fixed inset-y-0 left-0 z-50 shadow-2xl' : 'relative border-r border-border'}
           ${isOpen ? 'w-72 translate-x-0' : isMobile ? '-translate-x-full w-72' : 'w-0 translate-x-0'}
-          h-full bg-gray-50 flex flex-col transition-all duration-300 ease-out overflow-hidden
+          h-full bg-background flex flex-col transition-all duration-300 ease-out overflow-hidden
         `}
       >
         <div className="p-4 flex flex-col h-full w-72">
@@ -98,8 +98,8 @@ export default function Sidebar() {
           />
 
           {/* Footer */}
-          <div className="pt-4 border-t border-gray-100 mt-auto">
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white rounded-xl text-sm text-gray-500 hover:text-gray-900 transition-all">
+          <div className="pt-4 border-t border-border mt-auto">
+            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted rounded-xl text-sm text-muted-foreground hover:text-foreground transition-all">
               <Settings className="w-4 h-4" />
               Settings
             </button>
