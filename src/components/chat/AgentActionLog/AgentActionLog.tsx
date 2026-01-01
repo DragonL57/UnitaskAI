@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Zap, Search, FileText, ChevronUp, ChevronDown, MessageSquare } from 'lucide-react';
+import { Zap, Search, FileText, ChevronUp, ChevronDown, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { OrchestrationStep } from '@/context/ChatContext';
@@ -16,26 +16,37 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
   const isOpen = forceOpen || userOpened;
 
   return (
-    <div className="ml-0.5 my-1">
-      <button 
-        onClick={() => setUserOpened(!userOpened)}
-        className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-all text-[9px] font-bold uppercase tracking-wider border ${ 
-          isOpen 
-            ? 'bg-primary/5 border-primary/20 text-primary' 
-            : 'bg-muted border-transparent text-muted-foreground hover:bg-muted/80'
-        }`}
-      >
-        <Zap className={`w-2.5 h-2.5 ${forceOpen ? 'animate-pulse' : ''}`} />
-        <span>{steps.length} {steps.length === 1 ? 'Step' : 'Steps'}</span>
-        <ChevronDown className={`w-2.5 h-2.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      
-      <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-        <div className="overflow-hidden">
-          <div className="mt-1 ml-2 p-0.5 space-y-0 border-l border-border/50">
-            {steps.map((step, i) => (
-              <CollapsibleStep key={i} step={step} />
-            ))}
+    <div className="my-3 max-w-2xl mx-auto">
+      <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
+        <button 
+          onClick={() => setUserOpened(!userOpened)}
+          className={`flex items-center justify-between w-full px-4 py-3 transition-colors ${ 
+            isOpen 
+              ? 'bg-muted/30 text-foreground' 
+              : 'hover:bg-muted/50 text-muted-foreground'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${isOpen ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <Zap className={`w-4 h-4 ${forceOpen ? 'animate-pulse' : ''}`} />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-semibold">Agent Activity</div>
+              <div className="text-[11px] text-muted-foreground font-medium">
+                {steps.length} {steps.length === 1 ? 'Step' : 'Steps'} Processed
+              </div>
+            </div>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        
+        <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+          <div className="overflow-hidden bg-muted/10">
+            <div className="border-t border-border divide-y divide-border/50">
+              {steps.map((step, i) => (
+                <AccordionStep key={i} step={step} isLast={i === steps.length - 1} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -43,96 +54,109 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
   );
 };
 
-function CollapsibleStep({ step }: { step: OrchestrationStep }) {
+function AccordionStep({ step, isLast }: { step: OrchestrationStep; isLast: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const isConsulter = step.text.toLowerCase().includes('consulter');
-  const isSearch = step.text.toLowerCase().includes('search') || step.text.toLowerCase().includes('brave') || step.text.toLowerCase().includes('tavily');
+  
+  // Analyze step type for styling
+  const text = step.text.toLowerCase();
+  const isConsulter = text.includes('consulter');
+  const isApproved = isConsulter && text.includes('approve');
+  const isCritique = isConsulter && (text.includes('critique') || text.includes('reject') || text.includes('feedback'));
+  const isSearch = text.includes('search') || text.includes('brave') || text.includes('tavily');
   const hasMetadata = step.metadata && (step.metadata.urls?.length || step.metadata.titles?.length);
+  const isLongText = step.text.length > 80;
 
-  const config = {
-    thought: { icon: Zap, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-950/30' },
-    action: { 
-      icon: isConsulter ? MessageSquare : (isSearch ? Search : Zap), 
-      color: isConsulter ? 'text-purple-600 dark:text-purple-400' : (isSearch ? 'text-blue-500 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'), 
-      bg: isConsulter ? 'bg-purple-50 dark:bg-purple-950/30' : (isSearch ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-indigo-50 dark:bg-indigo-950/30') 
-    },
-    report: { 
-      icon: isConsulter ? MessageSquare : FileText, 
-      color: isConsulter ? 'text-purple-600 dark:text-purple-400' : 'text-emerald-600 dark:text-emerald-400', 
-      bg: isConsulter ? 'bg-purple-50 dark:bg-purple-950/30' : 'bg-emerald-50 dark:bg-emerald-950/30' 
+  // Determine Icon and Accent Color
+  let Icon = Zap;
+  let iconClass = "text-primary";
+  
+  if (isConsulter) {
+    if (isApproved) {
+      Icon = CheckCircle;
+      iconClass = "text-emerald-600 dark:text-emerald-500";
+    } else if (isCritique) {
+      Icon = AlertCircle;
+      iconClass = "text-amber-600 dark:text-amber-500";
+    } else {
+      Icon = MessageSquare;
+      iconClass = "text-violet-600 dark:text-violet-500";
     }
-  }[step.type];
+  } else if (isSearch) {
+    Icon = Search;
+    iconClass = "text-blue-500 dark:text-blue-400";
+  } else if (step.type === 'report') {
+    Icon = FileText;
+    iconClass = "text-foreground";
+  }
 
-  const Icon = config.icon;
-  const isExpandable = step.text.length > 60 || hasMetadata || step.type === 'report';
+  const isExpandable = isLongText || hasMetadata || step.type === 'report';
 
   return (
-    <div className="relative pl-5 py-0.5 group">
-      <div className={`absolute left-[-3px] top-[10px] w-1.5 h-1.5 rounded-full border bg-background transition-all z-10 ${ 
-        isExpanded ? 'border-primary scale-110' : 'border-border group-hover:border-muted-foreground'
-      }`} />
-
-      <div className={`flex flex-col rounded-lg transition-all border ${ 
-        isExpanded 
-          ? 'bg-muted/30 border-border p-2' 
-          : 'bg-transparent border-transparent hover:bg-muted/20 px-1.5 py-0.5'
-      }`}>
-        <button 
-          onClick={() => isExpandable && setIsExpanded(!isExpanded)}
-          disabled={!isExpandable}
-          className={`flex items-center gap-2 w-full text-left ${isExpandable ? 'cursor-pointer' : 'cursor-default'}`}
-        >
-          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${config.bg} ${config.color}`}>
-            <Icon className="w-2.5 h-2.5" />
+    <div className={`transition-colors ${isExpanded ? 'bg-background' : 'hover:bg-muted/30'}`}>
+      <button 
+        onClick={() => isExpandable && setIsExpanded(!isExpanded)}
+        disabled={!isExpandable}
+        className={`w-full px-4 py-3 flex items-start gap-3 text-left ${isExpandable ? 'cursor-pointer' : 'cursor-default'}`}
+      >
+        <div className={`mt-0.5 shrink-0 ${iconClass}`}>
+           <Icon className="w-4 h-4" />
+        </div>
+        
+        <div className="flex-1 min-w-0 pt-0.5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-sm">
+              {step.type}
+            </span>
+            <span className="text-xs text-muted-foreground font-medium truncate">
+              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[7px] font-black uppercase tracking-widest px-1 rounded-sm ${config.bg} ${config.color}`}>
-                {step.type}
-              </span>
-              <span className={`text-[10px] font-medium truncate transition-colors ${isExpanded ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {step.text}
-              </span>
-            </div>
+          <div className={`text-sm leading-relaxed transition-colors ${isExpanded ? 'text-foreground' : 'text-muted-foreground'}`}>
+             {isLongText ? (
+               <span className="line-clamp-1">{step.text}</span>
+             ) : (
+               step.text
+             )}
           </div>
-          
-          {isExpandable && (
-            <ChevronDown className={`w-2.5 h-2.5 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-          )}
-        </button>
+        </div>
+        
+        {isExpandable && (
+           <ChevronDown className={`w-4 h-4 text-muted-foreground/50 shrink-0 transition-transform duration-200 mt-1 ${isExpanded ? 'rotate-180' : ''}`} />
+        )}
+      </button>
 
-        <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-          <div className="overflow-hidden">
-            <div className="pt-2 space-y-2">
-              {step.text.length > 60 && (
-                <div className="text-[10px] text-muted-foreground leading-relaxed pl-1 bg-background/50 p-1.5 rounded-md border border-border/50">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {step.text}
-                  </ReactMarkdown>
-                </div>
-              )}
+      {/* Expanded Content */}
+      <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className="overflow-hidden">
+          <div className="px-4 pb-4 pt-0 pl-[3.25rem] space-y-3">
+            {isLongText && (
+              <div className="text-xs text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none bg-muted/30 p-3 rounded-md border border-border/50">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {step.text}
+                </ReactMarkdown>
+              </div>
+            )}
 
-              {hasMetadata && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  {step.metadata?.urls?.map((url, idx) => {
-                    const title = step.metadata?.titles?.[idx] || `Source ${idx + 1}`;
-                    return (
-                      <a 
-                        key={idx} 
-                        href={url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-background hover:bg-muted text-muted-foreground hover:text-foreground rounded text-[9px] font-bold transition-all border border-border hover:border-primary/20 shadow-sm active:scale-95"
-                      >
-                        <Search className="w-2.5 h-2.5" />
-                        <span className="max-w-[120px] truncate">{title}</span>
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {hasMetadata && (
+              <div className="flex flex-wrap gap-2">
+                {step.metadata?.urls?.map((url, idx) => {
+                  const title = step.metadata?.titles?.[idx] || `Source ${idx + 1}`;
+                  return (
+                    <a 
+                      key={idx} 
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-background hover:bg-muted text-muted-foreground hover:text-foreground rounded-md text-xs font-medium transition-all border border-border shadow-sm hover:shadow-md"
+                    >
+                      <Search className="w-3.5 h-3.5 opacity-70" />
+                      <span className="max-w-[200px] truncate">{title}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

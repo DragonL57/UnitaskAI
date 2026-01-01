@@ -128,7 +128,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                   else if ((event.type === 'thought' || event.type === 'action' || event.type === 'report') && lastMsg.content) {
                     needsNew = true;
                   }
-                  else if (event.type === 'agent' && event.name !== lastMsg.agent && (lastMsg.content || (lastMsg.steps && lastMsg.steps.length > 0))) {
+                  else if (event.type === 'agent' && event.name !== lastMsg.agent && lastMsg.content) {
                     needsNew = true;
                   }
 
@@ -152,11 +152,14 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                       if (event.type === 'agent') {
                         updated.agent = event.name;
                       } else if (event.type === 'thought' || event.type === 'action' || event.type === 'report') {
-                        updated.steps = [...(m.steps || []), { 
-                          type: event.type, 
-                          text: event.text, 
-                          metadata: event.metadata 
-                        }];
+                        const lastStep = m.steps?.[m.steps.length - 1];
+                        if (!lastStep || lastStep.type !== event.type || lastStep.text !== event.text) {
+                          updated.steps = [...(m.steps || []), { 
+                            type: event.type, 
+                            text: event.text, 
+                            metadata: event.metadata 
+                          }];
+                        }
                       } else if (event.type === 'chunk') {
                         updated.content = m.content + event.text;
                       }
