@@ -4,7 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   PanelLeftClose, 
   PanelLeftOpen, 
-  Settings
+  Settings,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { getSessions } from '@/actions/sessions';
 import { useChat, Session } from '@/context/ChatContext';
@@ -12,12 +14,16 @@ import { IconButton } from '@/components/ui/IconButton';
 import { NewChatButton } from './sidebar/NewChatButton';
 import { SearchBox } from './sidebar/SearchBox';
 import { SessionList } from './sidebar/SessionList';
+import { useTheme } from 'next-themes';
 
 export default function Sidebar() {
   const { 
     sessions, 
     setSessions, 
   } = useChat();
+
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -33,6 +39,7 @@ export default function Sidebar() {
   }, [setSessions]);
 
   useEffect(() => {
+    setMounted(true);
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
@@ -98,11 +105,19 @@ export default function Sidebar() {
           />
 
           {/* Footer */}
-          <div className="pt-4 border-t border-border mt-auto">
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted rounded-xl text-sm text-muted-foreground hover:text-foreground transition-all">
+          <div className="pt-4 border-t border-border mt-auto flex items-center gap-2">
+            <button className="flex-1 flex items-center gap-3 px-3 py-2.5 hover:bg-muted rounded-xl text-sm text-muted-foreground hover:text-foreground transition-all">
               <Settings className="w-4 h-4" />
               Settings
             </button>
+            {mounted && (
+              <IconButton
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                icon={theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                title="Toggle Theme"
+                variant="ghost"
+              />
+            )}
           </div>
         </div>
       </aside>
