@@ -53,7 +53,7 @@ export const EmptyState = ({ onActionClick }: EmptyStateProps) => {
       </h2>
       
       <p className="text-sm text-muted-foreground mb-8 max-w-sm">
-        I'm your personal AI companion. Ask me anything, or choose a task below.
+        I&apos;m your personal AI companion. Ask me anything, or choose a task below.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
