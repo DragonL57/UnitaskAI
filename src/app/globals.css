@@ -57,7 +57,7 @@
   --radius: 0.5rem;
 }
 
-.dark {
+:root.dark {
   --background: 252 4% 15%;      /* Darkened Hawk Grey */
   --foreground: 240 20% 99%;
   --card: 252 4% 18%;
@@ -77,6 +77,7 @@
   --border: 252 4% 25%;
   --input: 252 4% 25%;
   --ring: 243 91% 69%;
+  color-scheme: dark;
 }
 
 body {
