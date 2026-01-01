@@ -27,16 +27,18 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
       >
         <Zap className={`w-2.5 h-2.5 ${forceOpen ? 'animate-pulse' : ''}`} />
         <span>{steps.length} {steps.length === 1 ? 'Step' : 'Steps'}</span>
-        {isOpen ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+        <ChevronDown className={`w-2.5 h-2.5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
-      {isOpen && (
-        <div className="mt-1 ml-2 p-0.5 space-y-0 border-l border-border/50 animate-in slide-in-from-top-1 duration-200">
-          {steps.map((step, i) => (
-            <CollapsibleStep key={i} step={step} />
-          ))}
+      <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+        <div className="overflow-hidden">
+          <div className="mt-1 ml-2 p-0.5 space-y-0 border-l border-border/50">
+            {steps.map((step, i) => (
+              <CollapsibleStep key={i} step={step} />
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -100,37 +102,39 @@ function CollapsibleStep({ step }: { step: OrchestrationStep }) {
           )}
         </button>
 
-        {isExpanded && (
-          <div className="mt-2 space-y-2 animate-in fade-in zoom-in-95 duration-200">
-            {step.text.length > 60 && (
-              <div className="text-[10px] text-muted-foreground leading-relaxed pl-1 bg-background/50 p-1.5 rounded-md border border-border/50">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {step.text}
-                </ReactMarkdown>
-              </div>
-            )}
+        <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+          <div className="overflow-hidden">
+            <div className="pt-2 space-y-2">
+              {step.text.length > 60 && (
+                <div className="text-[10px] text-muted-foreground leading-relaxed pl-1 bg-background/50 p-1.5 rounded-md border border-border/50">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {step.text}
+                  </ReactMarkdown>
+                </div>
+              )}
 
-            {hasMetadata && (
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                {step.metadata?.urls?.map((url, idx) => {
-                  const title = step.metadata?.titles?.[idx] || `Source ${idx + 1}`;
-                  return (
-                    <a 
-                      key={idx} 
-                      href={url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-background hover:bg-muted text-muted-foreground hover:text-foreground rounded text-[9px] font-bold transition-all border border-border hover:border-primary/20 shadow-sm active:scale-95"
-                    >
-                      <Search className="w-2.5 h-2.5" />
-                      <span className="max-w-[120px] truncate">{title}</span>
-                    </a>
-                  );
-                })}
-              </div>
-            )}
+              {hasMetadata && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {step.metadata?.urls?.map((url, idx) => {
+                    const title = step.metadata?.titles?.[idx] || `Source ${idx + 1}`;
+                    return (
+                      <a 
+                        key={idx} 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-background hover:bg-muted text-muted-foreground hover:text-foreground rounded text-[9px] font-bold transition-all border border-border hover:border-primary/20 shadow-sm active:scale-95"
+                      >
+                        <Search className="w-2.5 h-2.5" />
+                        <span className="max-w-[120px] truncate">{title}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
