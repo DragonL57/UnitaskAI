@@ -21,7 +21,7 @@ This plan outlines the steps to modernize the UI, improve UX, and refine key com
 - [x] Task: Fix duplicate steps in AgentActionLog by deduping in Chat.tsx 81fcf6e
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Action Log & Consulter Feedback' (Protocol in workflow.md)
 
-## Phase 4: Final Polish & Responsiveness [checkpoint: TBD]
+## Phase 4: Final Polish & Responsiveness [checkpoint: ad99484]
 - [x] Task: Conduct a mobile responsiveness audit across all new layouts and fix issues
 - [x] Task: Ensure accessibility (contrast, focus states) across updated components
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Final Polish & Responsiveness' (Protocol in workflow.md)
