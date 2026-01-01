@@ -22,6 +22,6 @@ This plan outlines the steps to modernize the UI, improve UX, and refine key com
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Action Log & Consulter Feedback' (Protocol in workflow.md)
 
 ## Phase 4: Final Polish & Responsiveness [checkpoint: TBD]
-- [ ] Task: Conduct a mobile responsiveness audit across all new layouts and fix issues
-- [ ] Task: Ensure accessibility (contrast, focus states) across updated components
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Final Polish & Responsiveness' (Protocol in workflow.md)
+- [x] Task: Conduct a mobile responsiveness audit across all new layouts and fix issues
+- [x] Task: Ensure accessibility (contrast, focus states) across updated components
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Final Polish & Responsiveness' (Protocol in workflow.md)
