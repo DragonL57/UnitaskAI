@@ -10,7 +10,7 @@ This plan outlines the steps to modernize the UI, improve UX, and refine key com
 
 ## Phase 2: Chat Interface Improvements [checkpoint: TBD]
 - [x] Task: Enhance `MessageItem` component styling for better readability and spacing 0635643
-- [ ] Task: Update `MarkdownRenderer` (or equivalent) to style code blocks and headers more cleanly
+- [x] Task: Update `MarkdownRenderer` (or equivalent) to style code blocks and headers more cleanly b9df0e6
 - [ ] Task: Refine `InputArea` design for a more modern chat experience
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Chat Interface Improvements' (Protocol in workflow.md)
 
