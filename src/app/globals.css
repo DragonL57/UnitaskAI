@@ -35,93 +35,49 @@
 }
 
 :root {
-  /* HSL Conversions roughly approximated for the specific hex codes */
-  
-  /* #fdfcfd - Brilliance */
-  --background: 300 1% 99%;
-  
-  /* #1e1e1e - Dynamic Black */
-  --foreground: 0 0% 12%;
-  
-  /* #fdfcfd - Brilliance */
-  --card: 300 1% 99%;
-  --card-foreground: 0 0% 12%;
-  
-  --popover: 300 1% 99%;
-  --popover-foreground: 0 0% 12%;
-  
-  /* #588ef4 - Blue Elemental */
-  --primary: 219 88% 65%;
-  --primary-foreground: 300 1% 99%;
-  
-  /* #dadcf4 - Nostalgia Perfume */
-  --secondary: 235 52% 91%;
-  --secondary-foreground: 0 0% 12%;
-  
-  /* Lightened Nostalgia Perfume for backgrounds */
-  --muted: 235 52% 96%;
-  
-  /* #749985 - Silent Sage */
-  --muted-foreground: 148 15% 53%;
-  
-  /* #beb9df - Wisteria Fragrance */
-  --accent: 248 37% 80%;
-  --accent-foreground: 0 0% 12%;
-  
+  --background: 240 20% 99%;      /* #fbfbfc - Whiteout */
+  --foreground: 252 4% 47%;       /* #77757b - Hawk Grey */
+  --card: 240 20% 99%;
+  --card-foreground: 252 4% 47%;
+  --popover: 240 20% 99%;
+  --popover-foreground: 252 4% 47%;
+  --primary: 243 91% 69%;        /* #7169f8 - If I Could Fly */
+  --primary-foreground: 240 20% 99%;
+  --secondary: 216 12% 93%;      /* #eceef1 - Bái Sè White */
+  --secondary-foreground: 243 91% 69%;
+  --muted: 216 12% 93%;
+  --muted-foreground: 206 6% 79%;  /* #c6c9cc - Grey Screen */
+  --accent: 180 2% 87%;           /* #dbdede - Script White */
+  --accent-foreground: 243 91% 69%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
-  
-  /* #dadcf4 - Nostalgia Perfume */
-  --border: 235 52% 91%;
-  --input: 235 52% 91%;
-  
-  /* #588ef4 - Blue Elemental */
-  --ring: 219 88% 65%;
-  
+  --border: 216 12% 90%;
+  --input: 216 12% 90%;
+  --ring: 243 91% 69%;
   --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* #1e1e1e - Dynamic Black */
-    --background: 0 0% 12%;
-    
-    /* #fdfcfd - Brilliance */
-    --foreground: 300 1% 99%;
-    
-    /* #1e1e1e - Dynamic Black */
-    --card: 0 0% 12%;
-    --card-foreground: 300 1% 99%;
-    
-    --popover: 0 0% 12%;
-    --popover-foreground: 300 1% 99%;
-    
-    /* #588ef4 - Blue Elemental */
-    --primary: 219 88% 65%;
-    --primary-foreground: 300 1% 99%;
-    
-    /* #2a2a35 - Darkened Nostalgia Perfume */
-    --secondary: 235 30% 20%;
-    --secondary-foreground: 300 1% 99%;
-    
-    /* #2a2a35 */
-    --muted: 235 30% 20%;
-    
-    /* #749985 - Silent Sage (Lightened for dark mode readability) */
-    --muted-foreground: 148 15% 65%;
-    
-    /* #2a2a35 */
-    --accent: 235 30% 25%;
-    --accent-foreground: 300 1% 99%;
-    
+    --background: 252 4% 15%;      /* Darkened Hawk Grey */
+    --foreground: 240 20% 99%;
+    --card: 252 4% 18%;
+    --card-foreground: 240 20% 99%;
+    --popover: 252 4% 15%;
+    --popover-foreground: 240 20% 99%;
+    --primary: 243 91% 69%;
+    --primary-foreground: 240 20% 99%;
+    --secondary: 252 4% 25%;
+    --secondary-foreground: 240 20% 99%;
+    --muted: 252 4% 20%;
+    --muted-foreground: 206 6% 60%;
+    --accent: 252 4% 25%;
+    --accent-foreground: 240 20% 99%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    
-    /* #2a2a35 */
-    --border: 235 30% 20%;
-    --input: 235 30% 20%;
-    
-    --ring: 219 88% 65%;
+    --border: 252 4% 25%;
+    --input: 252 4% 25%;
+    --ring: 243 91% 69%;
   }
 }
 
