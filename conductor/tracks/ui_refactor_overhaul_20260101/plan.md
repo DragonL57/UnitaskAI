@@ -2,7 +2,7 @@
 
 This plan outlines the steps to modernize the UI, improve UX, and refine key components like the Chat Interface and Action Log.
 
-## Phase 1: Global Layout & Visual System [checkpoint: TBD]
+## Phase 1: Global Layout & Visual System [checkpoint: 235302b]
 - [x] Task: Audit and update global color palette and typography variables in `globals.css` ab83cce
 - [x] Task: Refactor `Sidebar.tsx` for cleaner structure and responsive behavior dc52bac
 - [x] Task: Refactor Dashboard/Home page layout for better information density and visual appeal 488afbc
