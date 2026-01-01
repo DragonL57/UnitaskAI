@@ -4,26 +4,33 @@ import React, { useState } from 'react';
 import Chat from '@/components/Chat';
 import MemoryManager from '@/components/MemoryManager';
 import Modal from '@/components/Modal';
-import { Database, Sparkles } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
+import Image from 'next/image';
 
 export default function Home({ sessionId }: { sessionId?: string }) {
   const [isMemoryOpen, setIsMemoryOpen] = useState(false);
 
   return (
-    <main className="h-[100dvh] w-full bg-white flex flex-col overflow-hidden">
+    <main className="h-[100dvh] w-full bg-background flex flex-col overflow-hidden">
       {/* App Header */}
-      <header className="h-14 px-6 flex justify-between items-center bg-white border-b border-gray-100 shrink-0 z-20">
+      <header className="h-14 px-6 flex justify-between items-center bg-white border-b border-border shrink-0 z-20">
         <div className="flex items-center gap-2 pl-10 md:pl-0">
-          <div className="bg-indigo-600 p-1 rounded-xl text-white shadow-lg shadow-indigo-100">
-            <Sparkles className="w-4 h-4" />
+          <div className="relative w-8 h-8">
+             <Image
+              src="/UniTaskAI_logo.png"
+              alt="UniTaskAI Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <h1 className="text-lg font-black text-gray-900 tracking-tighter">Unitask AI</h1>
+          <h1 className="text-lg font-bold text-foreground tracking-tight">Unitask AI</h1>
         </div>
         
         <IconButton
           onClick={() => setIsMemoryOpen(true)}
-          variant="secondary"
+          variant="ghost"
           icon={<Database className="w-4 h-4" />}
           title="Open Memory"
         />

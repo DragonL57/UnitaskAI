@@ -8,14 +8,14 @@ import { MessageList } from './chat/MessageList';
 import { InputArea } from './chat/InputArea';
 
 export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, onNewMessage?: () => void }) {
-  const { 
-    messages, 
-    setMessages, 
-    isLoading, 
-    setIsLoading, 
-    refreshSessions 
+  const {
+    messages,
+    setMessages,
+    isLoading,
+    setIsLoading,
+    refreshSessions
   } = useChat();
-  
+
   const [input, setInput] = React.useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
   const router = useRouter();
@@ -57,8 +57,12 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (overrideInput?: string) => {
+    // If called via event (e.g. from InputArea form submission), overrideInput might be the event object
+    // We need to check if it's a string
+    const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
+
+    if (!textToSend.trim() || isLoading) return;
 
     let currentSessionId = sessionId;
 
@@ -71,7 +75,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: textToSend };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -89,7 +93,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history, sessionId: currentSessionId }),
+        body: JSON.stringify({ message: textToSend, history, sessionId: currentSessionId }),
         signal: controller.signal
       });
 
@@ -112,15 +116,15 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
             if (line.startsWith('__EVENT__:')) {
               try {
                 const event = JSON.parse(line.replace('__EVENT__:', ''));
-                
+
                 setMessages(prev => {
                   const lastMsg = prev[prev.length - 1];
-                  
+
                   let needsNew = false;
-                  
+
                   if (event.type === 'chunk' && lastMsg.steps && lastMsg.steps.length > 0) {
                     needsNew = true;
-                  } 
+                  }
                   else if ((event.type === 'thought' || event.type === 'action' || event.type === 'report') && lastMsg.content) {
                     needsNew = true;
                   }
@@ -135,7 +139,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                       role: 'assistant', 
                       content: event.type === 'chunk' ? event.text : '', 
                       agent: event.type === 'agent' ? event.name : lastMsg.agent, 
-                      steps: (event.type === 'thought' || event.type === 'action' || event.type === 'report') 
+                      steps: (event.type === 'thought' || event.type === 'action' || event.type === 'report')
                         ? [{ type: event.type, text: event.text, metadata: event.metadata }]
                         : []
                     };
@@ -143,7 +147,7 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
                   } else {
                     return prev.map((m, idx) => {
                       if (idx !== prev.length - 1) return m;
-                      
+
                       const updated = { ...m };
                       if (event.type === 'agent') {
                         updated.agent = event.name;
@@ -188,12 +192,16 @@ export default function Chat({ sessionId, onNewMessage }: { sessionId?: string, 
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white">
-      <MessageList messages={messages} isLoading={isLoading} />
+      <MessageList 
+        messages={messages} 
+        isLoading={isLoading} 
+        onEmptyAction={(text) => handleSend(text)}
+      />
       <InputArea 
         input={input} 
         setInput={setInput} 
         isLoading={isLoading} 
-        onSend={handleSend} 
+        onSend={() => handleSend()} 
         onStop={handleStop} 
       />
     </div>
