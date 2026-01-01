@@ -20,7 +20,7 @@ export const MessageItem = ({ message, isLoading, isLast }: MessageItemProps) =>
       <div className={`flex flex-col gap-2 max-w-[90%] sm:max-w-[80%] ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
         
         {shouldShowBubble && (
-          <div className={`px-4 py-3 md:px-5 md:py-3.5 rounded-2xl shadow-sm ${ 
+          <div className={`px-4 py-3 md:px-5 md:py-3.5 rounded-2xl shadow-sm break-words overflow-hidden min-w-0 ${ 
             message.role === 'user' 
               ? 'bg-primary text-primary-foreground rounded-br-sm' 
               : 'bg-card text-foreground rounded-bl-sm border border-border'

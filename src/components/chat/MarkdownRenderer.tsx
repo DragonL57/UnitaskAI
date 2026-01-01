@@ -12,7 +12,7 @@ interface MarkdownRendererProps {
 
 export const MarkdownRenderer = ({ content, role }: MarkdownRendererProps) => {
   return (
-    <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${role === 'user' ? 'text-primary-foreground' : 'text-foreground'}`}>
+    <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content break-words min-w-0 ${role === 'user' ? 'text-primary-foreground' : 'text-foreground'}`}>
       <ReactMarkdown 
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}

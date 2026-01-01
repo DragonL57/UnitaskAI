@@ -114,6 +114,11 @@ body {
 }
 
 /* Markdown Styling for Chat */
+.markdown-content {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .markdown-content table {
   display: block;
   width: 100%;
