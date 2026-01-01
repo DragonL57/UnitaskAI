@@ -1,11 +1,9 @@
 'use client';
 
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
 import { Message } from '@/context/ChatContext';
 import { AgentActionLog } from '../AgentActionLog';
+import { MarkdownRenderer } from '../MarkdownRenderer';
 
 interface MessageItemProps {
   message: Message;
@@ -34,17 +32,7 @@ export const MessageItem = ({ message, isLoading, isLast }: MessageItemProps) =>
                 <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full animate-bounce"></div>
               </div>
             ) : (
-              <div className={`text-[15px] md:text-[16px] leading-relaxed markdown-content ${message.role === 'user' ? 'text-primary-foreground' : 'text-foreground'}`}>
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw]}
-                  components={{
-                    br: () => <br />,
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
-              </div>
+              <MarkdownRenderer content={message.content} role={message.role as 'user' | 'assistant'} />
             )}
           </div>
         )}
