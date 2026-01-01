@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Zap, Search, FileText, ChevronUp, ChevronDown, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
+import { Zap, Search, FileText, ChevronDown, MessageSquare, CheckCircle, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { OrchestrationStep } from '@/context/ChatContext';
@@ -20,6 +20,7 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
       <div className="border border-border rounded-xl overflow-hidden bg-card shadow-sm">
         <button 
           onClick={() => setUserOpened(!userOpened)}
+          aria-expanded={isOpen}
           className={`flex items-center justify-between w-full px-4 py-3 transition-colors ${ 
             isOpen 
               ? 'bg-muted/30 text-foreground' 
@@ -44,7 +45,7 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
           <div className="overflow-hidden bg-muted/10">
             <div className="border-t border-border divide-y divide-border/50">
               {steps.map((step, i) => (
-                <AccordionStep key={i} step={step} isLast={i === steps.length - 1} />
+                <AccordionStep key={i} step={step} />
               ))}
             </div>
           </div>
@@ -54,7 +55,7 @@ export const AgentActionLog = ({ steps, forceOpen }: AgentActionLogProps) => {
   );
 };
 
-function AccordionStep({ step, isLast }: { step: OrchestrationStep; isLast: boolean }) {
+function AccordionStep({ step }: { step: OrchestrationStep }) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Analyze step type for styling
@@ -96,6 +97,7 @@ function AccordionStep({ step, isLast }: { step: OrchestrationStep; isLast: bool
       <button 
         onClick={() => isExpandable && setIsExpanded(!isExpanded)}
         disabled={!isExpandable}
+        aria-expanded={isExpanded}
         className={`w-full px-4 py-3 flex items-start gap-3 text-left ${isExpandable ? 'cursor-pointer' : 'cursor-default'}`}
       >
         <div className={`mt-0.5 shrink-0 ${iconClass}`}>
