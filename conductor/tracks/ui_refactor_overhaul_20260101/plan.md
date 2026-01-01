@@ -16,7 +16,7 @@ This plan outlines the steps to modernize the UI, improve UX, and refine key com
 
 ## Phase 3: Action Log & Consulter Feedback [checkpoint: TBD]
 - [x] Task: Refactor `AgentActionLog` to be more compact by default eec7892
-- [ ] Task: Implement smoother collapse/expand animations for the action log
+- [x] Task: Implement smoother collapse/expand animations for the action log 5cc2197
 - [ ] Task: Add distinct visual states (icons/colors) for "Consulter" actions (Approved vs Critique) in the log
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Action Log & Consulter Feedback' (Protocol in workflow.md)
 
